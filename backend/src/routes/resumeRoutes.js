@@ -1,23 +1,27 @@
 // backend/src/routes/resumeRoutes.js
-import { Router } from "express";
-import OpenAI from "openai";
-import { simpleLocalOptimize, simpleJobMatchLocal, simpleCoverLetterLocal } from "../utils/fallbacks";
+const express = require("express");
+const OpenAI = require("openai");
+const {
+  simpleLocalOptimize,
+  simpleJobMatchLocal,
+  simpleCoverLetterLocal,
+} = require("../utils/fallbacks");
 
-const router = Router();
+const router = express.Router();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 // /optimize-resume
-router.post("/optimize-resume", async (req, res) => { 
-    const { resumeText, targetRole, language = "en" } = req.body || {};
+router.post("/optimize-resume", async (req, res) => {
+  const { resumeText, targetRole, language = "en" } = req.body || {};
 
-    if (!resumeText || typeof resumeText !== "string") {
+  if (!resumeText || typeof resumeText !== "string") {
     return res
       .status(400)
       .json({ error: "resumeText (string) is required" });
-    }
+  }
 
   const isTurkish = language === "tr";
 
@@ -39,18 +43,18 @@ router.post("/optimize-resume", async (req, res) => {
       : "You are an experienced career and resume coach. Your job is to rewrite the user's resume text to be stronger, more measurable, and ATS-friendly for the target role. Write in clear, professional English and focus on the target role.";
 
     const userPrompt = `
-    Resume text:
-    ${resumeText}
+Resume text:
+${resumeText}
 
-    Target role: ${targetRole || (isTurkish ? "Belirtilmedi" : "Not specified")}
+Target role: ${targetRole || (isTurkish ? "Belirtilmedi" : "Not specified")}
 
-    Instructions:
-    - Keep the content truthful but improve structure and impact.
-    - Use strong action verbs.
-    - Highlight measurable outcomes (percentages, numbers) when possible.
-    - Make it friendly for ATS (keywords, clear headings).
-    - Keep it as one coherent resume text (no explanations, just the improved version).
-    `;
+Instructions:
+- Keep the content truthful but improve structure and impact.
+- Use strong action verbs.
+- Highlight measurable outcomes (percentages, numbers) when possible.
+- Make it friendly for ATS (keywords, clear headings).
+- Keep it as one coherent resume text (no explanations, just the improved version).
+`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
@@ -92,7 +96,7 @@ router.post("/optimize-resume", async (req, res) => {
 });
 
 // /job-match-resume
-router.post("/job-match-resume", async (req, res) => { 
+router.post("/job-match-resume", async (req, res) => {
   const { resumeText, jobDescription, language = "en" } = req.body || {};
 
   if (!resumeText || !jobDescription) {
@@ -121,19 +125,19 @@ router.post("/job-match-resume", async (req, res) => {
       : "You are an experienced career and resume coach. Your job is to tailor the user's resume text to a specific job description, emphasizing alignment, measurable impact, and ATS-friendly phrasing.";
 
     const userPrompt = `
-        User resume:
-        ${resumeText}
+User resume:
+${resumeText}
 
-        Job description:
-        ${jobDescription}
+Job description:
+${jobDescription}
 
-        Instructions:
-        - Rewrite the resume so that it is clearly tailored to this job description.
-        - Emphasize experiences, skills, and keywords that match the job.
-        - Keep it truthful; don't invent achievements.
-        - Highlight measurable outcomes where possible.
-        - Output only the tailored resume text (no explanations or bullet summaries).
-        `;
+Instructions:
+- Rewrite the resume so that it is clearly tailored to this job description.
+- Emphasize experiences, skills, and keywords that match the job.
+- Keep it truthful; don't invent achievements.
+- Highlight measurable outcomes where possible.
+- Output only the tailored resume text (no explanations or bullet summaries).
+`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
@@ -170,11 +174,11 @@ router.post("/job-match-resume", async (req, res) => {
 
     res.status(500).json({ error: "Server error" });
   }
- });
+});
 
 // /cover-letter
-router.post("/cover-letter", async (req, res) => { 
-      const { resumeText, jobDescription, language = "en" } = req.body || {};
+router.post("/cover-letter", async (req, res) => {
+  const { resumeText, jobDescription, language = "en" } = req.body || {};
 
   if (!jobDescription && !resumeText) {
     return res
@@ -202,19 +206,19 @@ router.post("/cover-letter", async (req, res) => {
       : "You are an experienced career coach. Your job is to write a concise, professional cover letter based on the user's resume and the job description.";
 
     const userPrompt = `
-        User resume (optional):
-        ${resumeText || "(not provided)"}
+User resume (optional):
+${resumeText || "(not provided)"}
 
-        Job description:
-        ${jobDescription || "(not provided)"}
+Job description:
+${jobDescription || "(not provided)"}
 
-        Instructions:
-        - Write a professional cover letter for this role.
-        - Use a natural, human tone (no AI disclaimers).
-        - Emphasize alignment with the job requirements.
-        - Keep it within 3–6 short paragraphs.
-        - Output only the cover letter text, no explanations.
-        `;
+Instructions:
+- Write a professional cover letter for this role.
+- Use a natural, human tone (no AI disclaimers).
+- Emphasize alignment with the job requirements.
+- Keep it within 3–6 short paragraphs.
+- Output only the cover letter text, no explanations.
+`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
@@ -228,7 +232,11 @@ router.post("/cover-letter", async (req, res) => {
 
     const coverLetter =
       completion.choices?.[0]?.message?.content?.trim() ||
-      simpleCoverLetterLocal(resumeText || "", jobDescription || "", language);
+      simpleCoverLetterLocal(
+        resumeText || "",
+        jobDescription || "",
+        language
+      );
 
     res.json({ coverLetter, source: "openai" });
   } catch (err) {
@@ -251,6 +259,6 @@ router.post("/cover-letter", async (req, res) => {
 
     res.status(500).json({ error: "Server error" });
   }
- });
+});
 
-export default router;
+module.exports = router;

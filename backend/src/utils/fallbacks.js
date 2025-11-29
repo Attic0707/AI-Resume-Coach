@@ -1,4 +1,4 @@
-// ---------- Local fallback helpers ---------- //
+// backend/src/utils/fallbacks.js
 
 function simpleLocalOptimize(resumeText, targetRole, language) {
   const isTurkish = language === "tr";
@@ -8,8 +8,12 @@ function simpleLocalOptimize(resumeText, targetRole, language) {
     : "Locally mocked AI-optimized resume:\n\n";
 
   const summary = isTurkish
-    ? `Hedef pozisyon: ${targetRole || "Belirtilmedi"}\n\nÖne çıkanlar:\n• Daha net başarı odaklı cümleler\n• Güçlü fiiller ve ölçülebilir sonuçlar\n• Pozisyonla uyumlu anahtar kelimeler\n\n`
-    : `Target role: ${targetRole || "Not specified"}\n\nHighlights:\n• More achievement-focused phrasing\n• Strong action verbs & measurable impact\n• Keywords aligned with the role\n\n`;
+    ? `Hedef pozisyon: ${
+        targetRole || "Belirtilmedi"
+      }\n\nÖne çıkanlar:\n• Daha net başarı odaklı cümleler\n• Güçlü fiiller ve ölçülebilir sonuçlar\n• Pozisyonla uyumlu anahtar kelimeler\n\n`
+    : `Target role: ${
+        targetRole || "Not specified"
+      }\n\nHighlights:\n• More achievement-focused phrasing\n• Strong action verbs & measurable impact\n• Keywords aligned with the role\n\n`;
 
   const improvedBody = isTurkish
     ? resumeText
@@ -53,7 +57,8 @@ function simpleCoverLetterLocal(resumeText, jobDescription, language) {
   const jdShort =
     jobDescription && jobDescription.length > 260
       ? jobDescription.slice(0, 260) + "..."
-      : jobDescription || (isTurkish ? "İlan metni paylaşılmadı." : "Job description not provided.");
+      : jobDescription ||
+        (isTurkish ? "İlan metni paylaşılmadı." : "Job description not provided.");
 
   if (isTurkish) {
     return (
@@ -83,83 +88,118 @@ function simpleInterviewFeedbackLocal(question, answer, language) {
     ? "Görüşme Cevabı Değerlendirmesi (local mock):\n\n"
     : "Interview Answer Evaluation (local mock):\n\n";
 
-  const qText = question && question.trim()
-    ? question
-    : isTurkish
-    ? "Soru belirtilmedi."
-    : "Question not provided.";
+  const qText =
+    question && question.trim()
+      ? question
+      : isTurkish
+      ? "Soru belirtilmedi."
+      : "Question not provided.";
 
   const baseScore = answer && answer.length > 40 ? 7 : 4; // super rough
   const score = Math.min(10, baseScore + 1);
 
   const bodyTr = `
-    Soru: ${qText}
+Soru: ${qText}
 
-    Güçlü Yönler:
-    • Cevap genel olarak anlaşılır.
-    • Soruya doğrudan yanıt verme niyeti var.
-    • Kendi deneyimlerinden örnek vermeye çalışıyorsun.
+Güçlü Yönler:
+• Cevap genel olarak anlaşılır.
+• Soruya doğrudan yanıt verme niyeti var.
+• Kendi deneyimlerinden örnek vermeye çalışıyorsun.
 
-    Geliştirme Noktaları:
-    • STAR yapısını (Situation, Task, Action, Result) daha net kullan.
-    • Ölçülebilir sonuçlar ekle (ör: %X artış, Y gün daha hızlı, Z TL tasarruf).
-    • Rol ile bağlantıyı daha açık kur (şirketin/birimin hedeflerine nasıl katkı sağlıyorsun?).
+Geliştirme Noktaları:
+• STAR yapısını (Situation, Task, Action, Result) daha net kullan.
+• Ölçülebilir sonuçlar ekle (ör: %X artış, Y gün daha hızlı, Z TL tasarruf).
+• Rol ile bağlantıyı daha açık kur (şirketin/birimin hedeflerine nasıl katkı sağlıyorsun?).
 
-    Öneri:
-    • Önce durumu ve görevi 1-2 cümle ile anlat.
-    • Sonra hangi aksiyonları aldığını net maddelerle söyle.
-    • En sonda sonucu sayılarla ve etkisiyle özetle.
+Öneri:
+• Önce durumu ve görevi 1-2 cümle ile anlat.
+• Sonra hangi aksiyonları aldığını net maddelerle söyle.
+• En sonda sonucu sayılarla ve etkisiyle özetle.
 
-    Tahmini Skor (1–10): ${score}
-    `;
+Tahmini Skor (1–10): ${score}
+`;
 
   const bodyEn = `
-    Question: ${qText}
+Question: ${qText}
 
-    Strengths:
-    • Answer is generally understandable.
-    • You are attempting to address the question directly.
-    • You reference your own experience.
+Strengths:
+• Answer is generally understandable.
+• You are attempting to address the question directly.
+• You reference your own experience.
 
-    Areas to Improve:
-    • Use the STAR structure (Situation, Task, Action, Result) more clearly.
-    • Add measurable outcomes (e.g., %X increase, Y days faster, Z cost savings).
-    • Tie your answer explicitly to the role and company goals.
+Areas to Improve:
+• Use the STAR structure (Situation, Task, Action, Result) more clearly.
+• Add measurable outcomes (e.g., %X increase, Y days faster, Z cost savings).
+• Tie your answer explicitly to the role and company goals.
 
-    Suggestion:
-    • Briefly state the situation and task in 1–2 sentences.
-    • Then describe the specific actions you took.
-    • Finish with the result, using numbers where possible.
+Suggestion:
+• Briefly state the situation and task in 1–2 sentences.
+• Then describe the specific actions you took.
+• Finish with the result, using numbers where possible.
 
-    Estimated Score (1–10): ${score}
-    `;
+Estimated Score (1–10): ${score}
+`;
 
   return header + (isTurkish ? bodyTr : bodyEn);
 }
 
 function simpleInterviewQuestionsLocal(role, level, mode, language) {
   const isTurkish = language === "tr";
-  const base = isTurkish
-    ? [`Bu pozisyona neden başvuruyorsun?`, `Bu rol için seni diğer adaylardan ayıran şey nedir?`]
-    : [`Why are you applying for this role?`, `What makes you different from other candidates for this role?`];
+  const roleLabel = role || (isTurkish ? "bu rol" : "this role");
 
-  // You can create different sets by mode/level later; for now just return ~5
-  const extra = isTurkish
-    ? [
-        `${role || "Bu rol"} için en zor projen neydi?`,
-        "Hata yaptığın bir durumu ve bunu nasıl düzelttiğini anlatır mısın?",
-        "Bir ekiple yaşadığın anlaşmazlığı ve bunu nasıl çözdüğünü anlat.",
-      ]
-    : [
-        `What was the most challenging project related to ${role || "this role"} you worked on?`,
-        "Tell me about a mistake you made and how you fixed it.",
-        "Describe a conflict with a teammate and how you resolved it.",
-      ];
+  const baseEn = [
+    `Why are you interested in ${roleLabel}?`,
+    `What makes you a strong fit for ${roleLabel}?`,
+    `Tell me about a challenging project and how you handled it.`,
+    `Describe a time you received critical feedback. How did you respond?`,
+    `Tell me about a time you worked with a difficult stakeholder or colleague.`,
+    `Describe a situation where you had to learn something quickly to succeed.`,
+    `Tell me about a mistake you made and what you learned from it.`,
+    `How do you prioritize tasks when everything seems urgent?`,
+    `Give an example of a time you led a project or initiative.`,
+    `Why should we choose you for ${roleLabel}?`,
+  ];
 
-  return [...base, ...extra];
+  const baseTr = [
+    `${roleLabel} için neden başvuruyorsun?`,
+    `${roleLabel} pozisyonu için seni güçlü kılan özellikler neler?`,
+    "Zorlayıcı bir projeni ve bununla nasıl başa çıktığını anlatır mısın?",
+    "Eleştirel bir geri bildirim aldığın bir zamanı ve buna nasıl tepki verdiğini anlat.",
+    "Zor bir paydaş veya çalışma arkadaşıyla çalıştığın bir durumu anlatır mısın?",
+    "Başarılı olmak için çok hızlı öğrenmen gereken bir durumu anlat.",
+    "Yaptığın bir hatayı ve bundan ne öğrendiğini paylaşır mısın?",
+    "Her şey acil göründüğünde işleri nasıl önceliklendiriyorsun?",
+    "Bir projeye veya inisiyatife liderlik ettiğin bir örneği anlat.",
+    `${roleLabel} için neden seni seçmeliyiz?`,
+  ];
+
+  let all = isTurkish ? baseTr : baseEn;
+
+  if (level === "junior") {
+    all = all.map((q, idx) =>
+      idx === 1
+        ? q +
+          (isTurkish
+            ? " (Yeni mezun / kariyerinin başında biri olarak yanıtlayabilirsin.)"
+            : " (You can answer from a junior / early-career perspective.)")
+        : q
+    );
+  } else if (level === "senior") {
+    all = all.map((q, idx) =>
+      idx === 1
+        ? q +
+          (isTurkish
+            ? " (Liderlik, mentörlük ve stratejik katkılara vurgu yap.)"
+            : " (Emphasize leadership, mentoring and strategic impact.)")
+        : q
+    );
+  }
+
+  const desiredCount = mode === "deep" ? 10 : 5;
+  return all.slice(0, desiredCount);
 }
 
-export default {
+module.exports = {
   simpleLocalOptimize,
   simpleJobMatchLocal,
   simpleCoverLetterLocal,

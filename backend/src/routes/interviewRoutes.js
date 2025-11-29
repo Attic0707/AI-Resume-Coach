@@ -1,27 +1,29 @@
 // backend/src/routes/interviewRoutes.js
-import { Router } from "express";
-import OpenAI from "openai";
-import { simpleInterviewFeedbackLocal, simpleInterviewQuestionsLocal } from "../utils/fallbacks";
+const express = require("express");
+const OpenAI = require("openai");
+const {
+  simpleInterviewFeedbackLocal,
+  simpleInterviewQuestionsLocal,
+} = require("../utils/fallbacks");
 
-const router = Router();
+const router = express.Router();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// /interview-feedback (move your existing one here)
-router.post("/interview-feedback", async (req, res) => { 
-    const { question, answer, language = "en" } = req.body || {};
+// /interview-feedback
+router.post("/interview-feedback", async (req, res) => {
+  const { question, answer, language = "en" } = req.body || {};
 
-    if (!answer || typeof answer !== "string") {
-        return res
-        .status(400)
-        .json({ error: "answer (string) is required" });
-    }
+  if (!answer || typeof answer !== "string") {
+    return res
+      .status(400)
+      .json({ error: "answer (string) is required" });
+  }
 
   const isTurkish = language === "tr";
 
-  // If no API key or in MOCK mode, use local feedback
   if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
     const feedback = simpleInterviewFeedbackLocal(
       question || "",
@@ -30,32 +32,32 @@ router.post("/interview-feedback", async (req, res) => {
     );
     return res.json({
       feedback,
-      score: 7, // dummy consistent score
+      score: 7,
       source: "local-mock",
     });
   }
 
   try {
     const systemPrompt = isTurkish
-      ? "Sen deneyimli bir mülakat koçusun. Görevin, adayın verdiği cevabı değerlendirip güçlü yönlerini, geliştirme alanlarını ve net bir puanlamayı (1–10 arası) STAR (Situation, Task, Action, Result) çerçevesinde sunmak."
+      ? "Sen deneyimli bir mülakat koçusun. Görevin, adayın verdiği cevabı değerlendirip güçlü yönlerini, geliştirme alanlarını ve net bir puanlamayı (1–10 arası) STAR (Situation, Task, Action, Result) çerçevesinde sunmaktır."
       : "You are an experienced interview coach. Your job is to evaluate the candidate's answer using the STAR framework (Situation, Task, Action, Result), highlighting strengths, areas for improvement, and giving a final score from 1 to 10.";
 
     const userPrompt = `
-        Interview question:
-        ${question || "(not provided)"}
+Interview question:
+${question || "(not provided)"}
 
-        Candidate answer:
-        ${answer}
+Candidate answer:
+${answer}
 
-        Instructions:
-        - Briefly restate what the candidate is trying to say.
-        - Evaluate the answer using STAR (Situation, Task, Action, Result).
-        - Highlight 3–5 strengths.
-        - Highlight 3–5 specific areas to improve.
-        - Provide concrete suggestions on how to make this answer stronger next time.
-        - At the end, give a score from 1 to 10 in the format: "Score: X/10".
-        - Respond in ${isTurkish ? "Turkish" : "English"}.
-        `;
+Instructions:
+- Briefly restate what the candidate is trying to say.
+- Evaluate the answer using STAR (Situation, Task, Action, Result).
+- Highlight 3–5 strengths.
+- Highlight 3–5 specific areas to improve.
+- Provide concrete suggestions on how to make this answer stronger next time.
+- At the end, give a score from 1 to 10 in the format: "Score: X/10".
+- Respond in ${isTurkish ? "Turkish" : "English"}.
+`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
@@ -71,7 +73,6 @@ router.post("/interview-feedback", async (req, res) => {
       completion.choices?.[0]?.message?.content?.trim() ||
       simpleInterviewFeedbackLocal(question || "", answer, language);
 
-    // Try to extract a score like "Score: X/10"
     let score = null;
     const match = fullFeedback.match(/Score:\s*(\d+)\s*\/\s*10/i);
     if (match) {
@@ -104,15 +105,20 @@ router.post("/interview-feedback", async (req, res) => {
 
     res.status(500).json({ error: "Server error" });
   }
- });
+});
 
-// NEW: /interview-questions
+// /interview-questions
 router.post("/interview-questions", async (req, res) => {
-  const { role, level, mode, language = "en" } = req.body || {};
+  const { role, level, mode = "quick", language = "en" } = req.body || {};
   const isTurkish = language === "tr";
 
   if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
-    const questions = simpleInterviewQuestionsLocal(role || "", level, mode, language);
+    const questions = simpleInterviewQuestionsLocal(
+      role || "",
+      level,
+      mode,
+      language
+    );
     return res.json({ questions, source: "local-mock" });
   }
 
@@ -127,10 +133,10 @@ Level: ${level || "(not specified)"}
 Mode (session length): ${mode || "quick"}
 
 Instructions:
-- Generate a list of concise interview questions tailored to this role and level.
+- Generate interview questions tailored to this role and level.
 - Include a mix of behavioral and role-specific questions.
 - Respond as plain text, one question per line.
-- Do not number them, just line breaks.
+- Do not number them, just one question per line.
 - Language: ${isTurkish ? "Turkish" : "English"}.
 `;
 
@@ -145,16 +151,40 @@ Instructions:
     });
 
     const raw = completion.choices?.[0]?.message?.content?.trim() || "";
-    const questions = raw
+
+    let questions = raw
       .split("\n")
       .map((q) => q.replace(/^\d+[\).\s-]+/, "").trim())
       .filter(Boolean);
+
+    const desiredCount = mode === "deep" ? 10 : 5;
+    if (questions.length > desiredCount) {
+      questions = questions.slice(0, desiredCount);
+    }
+
+    if (!questions.length) {
+      questions = simpleInterviewQuestionsLocal(
+        role || "",
+        level,
+        mode,
+        language
+      );
+      return res.json({
+        questions,
+        source: "local-fallback",
+      });
+    }
 
     res.json({ questions, source: "openai" });
   } catch (err) {
     console.error("Error in /interview-questions:", err);
 
-    const questions = simpleInterviewQuestionsLocal(role || "", level, mode, language);
+    const questions = simpleInterviewQuestionsLocal(
+      role || "",
+      level,
+      mode,
+      language
+    );
     res.status(200).json({
       questions,
       source: "local-fallback",
@@ -162,4 +192,4 @@ Instructions:
   }
 });
 
-export default router;
+module.exports = router;

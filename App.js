@@ -1136,52 +1136,6 @@ function InterviewCoachScreen({ navigation }) {
   const [sessionActive, setSessionActive] = useState(false);
   const isTurkish = language === "tr";
 
-  const buildQuestions = () => {
-    const roleLabel = role || (isTurkish ? "hedef pozisyon" : "target role");
-
-    const baseEn = [
-      `Can you briefly introduce yourself as a ${roleLabel}?`,
-      `What makes you a strong fit for this ${roleLabel} role?`,
-      "Tell me about a challenging project and how you handled it.",
-      "Describe a time you received critical feedback. How did you respond?",
-      "What are your biggest strengths and weaknesses?",
-      "Tell me about a time you worked with a difficult stakeholder or colleague.",
-      "Describe a situation where you had to learn something quickly to succeed.",
-      "How do you stay up to date in your field?",
-      "Tell me about a mistake you made and what you learned from it.",
-      "Why do you want to work in this role at our company?",
-    ];
-
-    const baseTr = [
-      `${roleLabel} olarak kısaca kendini tanıtır mısın?`,
-      `Seni bu ${roleLabel} pozisyonu için güçlü kılan özellikler neler?`,
-      "Zorlayıcı bir projeni ve bununla nasıl başa çıktığını anlatır mısın?",
-      "Eleştirel bir geri bildirim aldığın bir zamanı ve buna nasıl tepki verdiğini anlat.",
-      "En güçlü ve en zayıf yönlerin neler?",
-      "Zor bir paydaş veya çalışma arkadaşıyla çalıştığın bir durumu anlatır mısın?",
-      "Başarılı olmak için çok hızlı öğrenmen gereken bir durumu anlat.",
-      "Kendini alanındaki gelişmelerden haberdar tutmak için neler yapıyorsun?",
-      "Yaptığın bir hatayı ve bundan ne öğrendiğini paylaşır mısın?",
-      "Neden bu rol ve bu şirket için çalışmak istiyorsun?",
-    ];
-
-    const base = isTurkish ? baseTr : baseEn;
-    const length = mode === "quick" ? 5 : 10;
-    let subset = base.slice(0, length);
-
-    if (level === "junior") {
-      subset[1] += isTurkish
-        ? " (Yeni mezun / kariyerinin başında biri olarak yanıtlayabilirsin.)"
-        : " (You can answer from a junior/early-career perspective.)";
-    } else if (level === "senior") {
-      subset[1] += isTurkish
-        ? " (Liderlik, mentörlük ve stratejik katkılara vurgu yap.)"
-        : " (Emphasize leadership, mentoring and strategic impact.)";
-    }
-
-    return subset;
-  };
-
   const checkPaywall = () => {
     if (isPro) return true;
     if (freeCreditsLeft <= 0) {
