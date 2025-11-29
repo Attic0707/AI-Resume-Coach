@@ -23,7 +23,7 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { optimizeResume, jobMatchResume, generateCoverLetter, getInterviewFeedback, getInterviewQuestions } from "./app/utils/api";
 import Purchases from "react-native-purchases";
-import { buildResumeHtml } from "../utils/templates"; 
+import { buildResumeHtml } from "./app/utils/templates"; 
 
 const Stack = createNativeStackNavigator();
 

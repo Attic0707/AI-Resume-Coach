@@ -159,7 +159,7 @@ function simpleInterviewQuestionsLocal(role, level, mode, language) {
   return [...base, ...extra];
 }
 
-module.exports = {
+export default {
   simpleLocalOptimize,
   simpleJobMatchLocal,
   simpleCoverLetterLocal,

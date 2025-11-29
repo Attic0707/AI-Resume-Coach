@@ -1,6 +1,7 @@
 {
   "name": "ai-resume-coach-backend",
   "version": "1.0.0",
+  "type": "module",
   "description": "Backend for AI Resume & Interview Coach",
   "main": "server.js",
   "scripts": {

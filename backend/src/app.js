@@ -1,15 +1,15 @@
 // backend/src/app.js
-const express = require("express");
-const cors = require("cors");
+import express, { json } from "express";
+import cors from "cors";
 require("dotenv").config();
 
-const resumeRoutes = require("./routes/resumeRoutes");
-const interviewRoutes = require("./routes/interviewRoutes");
+import resumeRoutes from "./routes/resumeRoutes";
+import interviewRoutes from "./routes/interviewRoutes";
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(json());
 
 // Health check
 app.get("/", (req, res) => {
@@ -20,4 +20,4 @@ app.get("/", (req, res) => {
 app.use("/", resumeRoutes);
 app.use("/", interviewRoutes);
 
-module.exports = app;
+export default app;

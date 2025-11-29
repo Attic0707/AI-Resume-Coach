@@ -1,13 +1,9 @@
 // backend/src/routes/resumeRoutes.js
-const express = require("express");
-const OpenAI = require("openai");
-const {
-  simpleLocalOptimize,
-  simpleJobMatchLocal,
-  simpleCoverLetterLocal,
-} = require("../utils/fallbacks");
+import { Router } from "express";
+import OpenAI from "openai";
+import { simpleLocalOptimize, simpleJobMatchLocal, simpleCoverLetterLocal } from "../utils/fallbacks";
 
-const router = express.Router();
+const router = Router();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -257,4 +253,4 @@ router.post("/cover-letter", async (req, res) => {
   }
  });
 
-module.exports = router;
+export default router;

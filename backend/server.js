@@ -1,8 +1,8 @@
 // backend/server.js
-const app = require("./src/app");
+import { listen } from "./src/app";
 
 const port = process.env.PORT || 4000;
 
-app.listen(port, () => {
+listen(port, () => {
   console.log(`Backend listening on http://localhost:${port}`);
 });

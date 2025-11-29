@@ -1,12 +1,9 @@
 // backend/src/routes/interviewRoutes.js
-const express = require("express");
-const OpenAI = require("openai");
-const {
-  simpleInterviewFeedbackLocal,
-  simpleInterviewQuestionsLocal,
-} = require("../utils/fallbacks");
+import { Router } from "express";
+import OpenAI from "openai";
+import { simpleInterviewFeedbackLocal, simpleInterviewQuestionsLocal } from "../utils/fallbacks";
 
-const router = express.Router();
+const router = Router();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -165,4 +162,4 @@ Instructions:
   }
 });
 
-module.exports = router;
+export default router;
