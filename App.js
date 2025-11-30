@@ -13,11 +13,13 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-  Platform
+  Platform,
+  Modal,
 } from "react-native";
 import {
   NavigationContainer,
   useFocusEffect,
+  useNavigation,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -83,24 +85,20 @@ function ProBadge() {
   if (!isPro) return null;
 
   return (
-    <View
-      style={{
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 999,
-        backgroundColor: theme.accent,
-      }}
-    >
-      <Text
-        style={{
-          color: theme.textOnAccent,
-          fontSize: 12,
-          fontWeight: "700",
-        }}
-      >
+    <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: theme.accent, }} >
+      <Text style={{ color: theme.textOnAccent, fontSize: 12, fontWeight: "700", }} >
         PRO
       </Text>
     </View>
+  );
+}
+
+// Small "Lock Icon" for free users
+function LockIcon({ color = "#9ca3af", size = 14, style }) {
+  return (
+    <Text style={[ { fontSize: size, color, marginLeft: 6, }, style, ]}  >
+      🔒
+    </Text>
   );
 }
 
@@ -172,6 +170,75 @@ const darkTheme = {
   accent: "#38bdf8",
   textOnAccent: "#0f172a",
 };
+
+function ProOnlyFeatureTile({ title, subtitle, onPress }) {
+  const { isPro, theme } = useContext(AppContext);
+  const navigation = useNavigation();
+  const locked = !isPro;
+
+  const handlePress = () => {
+    if (locked) {
+      // Redirect non-Pro users to Upgrade screen
+      navigation.navigate("Upgrade");
+    } else if (onPress) {
+      onPress();
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={handlePress}
+      activeOpacity={0.8}
+      style={[
+        styles.resultBox,
+        {
+          backgroundColor: theme.bgCard,
+          borderColor: theme.border,
+          opacity: locked ? 0.7 : 1,
+        },
+      ]}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: 4,
+        }}
+      >
+        <Text
+          style={[
+            styles.resultTitle,
+            { color: theme.textPrimary },
+          ]}
+        >
+          {title}
+        </Text>
+        {locked && <LockIcon color={theme.textSecondary} />}
+      </View>
+
+      <Text
+        style={[
+          styles.resultText,
+          { color: theme.textSecondary },
+        ]}
+      >
+        {subtitle}
+      </Text>
+
+      {locked && (
+        <Text
+          style={{
+            marginTop: 8,
+            fontSize: 12,
+            color: theme.textSecondary,
+          }}
+        >
+          Pro only feature – tap to upgrade.
+        </Text>
+      )}
+    </TouchableOpacity>
+  );
+}
 
 // ---------- Welcome ----------
 function WelcomeScreen({ navigation }) {
@@ -294,6 +361,21 @@ function HomeScreen({ navigation }) {
           description="Practice questions and get instant feedback."
           emoji="🎤"
           onPress={() => navigation.navigate("InterviewCoach")}
+        />
+
+        <ProOnlyFeatureTile
+          title="Salary Benchmarks"
+          subtitle="Coming soon: Pro-only salary insights for your target role."
+          onPress={() => {
+            // For now, maybe still send to Upgrade or show a toast
+            navigation.navigate("Upgrade");
+          }}
+        />
+
+        <ProOnlyFeatureTile
+          title="Advanced Templates"
+          subtitle="Export ATS-ready resumes with different layouts and tones."
+          onPress={() => navigation.navigate("AdvancedTemplates")} // future screen
         />
 
         <FeatureCard
