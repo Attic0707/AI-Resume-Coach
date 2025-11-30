@@ -77,6 +77,77 @@ function formatDate(iso) {
   })}`;
 }
 
+// Small "PRO" badge for headers
+function ProBadge() {
+  const { isPro, theme } = useContext(AppContext);
+  if (!isPro) return null;
+
+  return (
+    <View
+      style={{
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 999,
+        backgroundColor: theme.accent,
+      }}
+    >
+      <Text
+        style={{
+          color: theme.textOnAccent,
+          fontSize: 12,
+          fontWeight: "700",
+        }}
+      >
+        PRO
+      </Text>
+    </View>
+  );
+}
+
+// Banner that shows free credits vs Pro unlimited
+function UsageBanner({ style }) {
+  const { isPro, freeCreditsLeft, theme } = useContext(AppContext);
+
+  if (isPro) {
+    return (
+      <Text
+        style={[
+          styles.sectionSubtitle,
+          {
+            color: theme.textSecondary,
+            marginTop: 4,
+            marginBottom: 8,
+          },
+          style,
+        ]}
+      >
+        ✅ You are on <Text style={{ fontWeight: "600" }}>ResumeIQ Pro</Text>.  
+        Unlimited AI calls for resume, job match and interview coaching.
+      </Text>
+    );
+  }
+
+  return (
+    <Text
+      style={[
+        styles.sectionSubtitle,
+        {
+          color: theme.textSecondary,
+          marginTop: 4,
+          marginBottom: 8,
+        },
+        style,
+      ]}
+    >
+      Free plan:{" "}
+      <Text style={{ fontWeight: "600" }}>
+        {freeCreditsLeft} AI credits
+      </Text>{" "}
+      left today. Upgrade to Pro for unlimited usage.
+    </Text>
+  );
+}
+
 // ---------- App Context & Theme ----------
 const AppContext = React.createContext(null);
 
@@ -162,6 +233,16 @@ function HomeScreen({ navigation }) {
         { backgroundColor: theme.bg },
       ]}
     >
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Text style={styles.homeTitle}>ResumeIQ</Text>
+        <ProBadge />
+      </View>
       <Text
         style={[
           styles.homeTitle,
@@ -408,24 +489,15 @@ function OptimizeResumeScreen({ navigation }) {
         { backgroundColor: theme.bg },
       ]}
     >
-      <ScrollView
-        contentContainerStyle={styles.optimizeScroll}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text
-          style={[
-            styles.sectionTitle,
-            { color: theme.textPrimary },
-          ]}
-        >
-          {isTurkish ? "CV'ni Optimize Et" : "Optimize Your Resume"}
-        </Text>
-        <Text
-          style={[
-            styles.sectionSubtitle,
-            { color: theme.textSecondary },
-          ]}
-        >
+      <ScrollView contentContainerStyle={styles.optimizeScroll} keyboardShouldPersistTaps="handled" >
+         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", }}  > 
+          <Text style={[ styles.sectionTitle, { color: theme.textPrimary }, ]}  >
+            {isTurkish ? "CV'ni Optimize Et" : "Optimize Your Resume"}
+          </Text>
+          <ProBadge />
+        </View>
+         <UsageBanner />
+        <Text style={[ styles.sectionSubtitle, { color: theme.textSecondary }, ]} >
           {isTurkish
             ? "CV metnini yapıştır, hedef pozisyonu seç ve AI senin için daha güçlü bir versiyon üretsin."
             : "Paste your resume, set your target role and let AI generate a stronger version for you."}
@@ -839,14 +911,24 @@ function JobMatchScreen({ navigation }) {
         contentContainerStyle={styles.optimizeScroll}
         keyboardShouldPersistTaps="handled"
       >
-        <Text
-          style={[
-            styles.sectionTitle,
-            { color: theme.textPrimary },
-          ]}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         >
-          {isTurkish ? "İlana Göre CV Eşleştirme" : "Match Resume to Job Description"}
-        </Text>
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: theme.textPrimary },
+            ]}
+          >
+            {isTurkish ? "İlana Göre CV Eşleştirme" : "Match Resume to Job Description"}
+          </Text>
+          <ProBadge />
+        </View>
+        <UsageBanner />
         <Text
           style={[
             styles.sectionSubtitle,
@@ -1280,14 +1362,24 @@ function InterviewCoachScreen({ navigation }) {
         contentContainerStyle={styles.optimizeScroll}
         keyboardShouldPersistTaps="handled"
       >
-        <Text
-          style={[
-            styles.sectionTitle,
-            { color: theme.textPrimary },
-          ]}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         >
-          {isTurkish ? "Mülakat Koçu" : "Interview Coach"}
-        </Text>
+          <Text
+            style={[
+              styles.sectionTitle,
+              { color: theme.textPrimary },
+            ]}
+          >
+            {isTurkish ? "Mülakat Koçu" : "Interview Coach"}
+          </Text>
+          <ProBadge />
+        </View>
+          <UsageBanner />
         <Text
           style={[
             styles.sectionSubtitle,
@@ -1967,8 +2059,7 @@ function UpgradeScreen() {
         customerInfo.entitlements.active
       );
 
-      const hasPro =
-        !!customerInfo.entitlements.active["Resume IQ Pro"];
+      const hasPro = customerInfo.entitlements?.active?.premium != null;
 
       if (hasPro) {
         upgradeToPro();
