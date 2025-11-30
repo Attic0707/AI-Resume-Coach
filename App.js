@@ -1893,12 +1893,12 @@ function UpgradeScreen() {
   const [offerings, setOfferings] = useState(null);
   const [loadingOfferings, setLoadingOfferings] = useState(true);
   const [purchaseLoading, setPurchaseLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
 
   useEffect(() => {
     const loadOfferings = async () => {
       try {
         const o = await Purchases.getOfferings();
-        // RevenueCat convention: o.current is the main offering
         setOfferings(o.current);
       } catch (e) {
         console.log("RevenueCat offerings error:", e);
@@ -1915,24 +1915,26 @@ function UpgradeScreen() {
       if (!offerings || !offerings.availablePackages?.length) {
         Alert.alert(
           "No packages",
-          "No products are configured in the RevenueCat Test Store yet."
+          "No products are configured in the RevenueCat store yet."
         );
         return;
       }
 
-      const pkg = offerings.availablePackages[0]; // first package in current offering
-      console.log('CHECK 1: ', offerings);
-      console.log('CHECK 2: ', pkg);
+      const pkg = offerings.availablePackages[0];
       setPurchaseLoading(true);
 
       const { customerInfo } = await Purchases.purchasePackage(pkg);
-      console.log( "RevenueCat customerInfo.entitlements.active:", customerInfo.entitlements.active );
+
+      console.log(
+        "RevenueCat customerInfo.entitlements.active:",
+        customerInfo.entitlements.active
+      );
 
       const hasPro =
-        customerInfo.entitlements?.active?.premium != null; // "premium" = entitlement identifier in RevenueCat
+        customerInfo.entitlements?.active?.premium != null;
 
       if (hasPro) {
-        upgradeToPro(); // update your app state
+        upgradeToPro();
         Alert.alert("Success", "You are now ResumeIQ Pro 🎉");
       } else {
         Alert.alert(
@@ -1943,7 +1945,6 @@ function UpgradeScreen() {
     } catch (e) {
       console.log("Purchase error:", e);
 
-      // userCancelled is present on most RevenueCat SDK errors
       if (!e.userCancelled) {
         Alert.alert(
           "Error",
@@ -1952,6 +1953,43 @@ function UpgradeScreen() {
       }
     } finally {
       setPurchaseLoading(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    try {
+      setRestoreLoading(true);
+
+      const customerInfo = await Purchases.restorePurchases();
+
+      console.log(
+        "Restore customerInfo.entitlements.active:",
+        customerInfo.entitlements.active
+      );
+
+      const hasPro =
+        !!customerInfo.entitlements.active["Resume IQ Pro"];
+
+      if (hasPro) {
+        upgradeToPro();
+        Alert.alert(
+          "Restored",
+          "Your ResumeIQ Pro membership has been restored 🎉"
+        );
+      } else {
+        Alert.alert(
+          "No purchases",
+          "No active Pro subscription found to restore."
+        );
+      }
+    } catch (e) {
+      console.log("Restore error:", e);
+      Alert.alert(
+        "Error",
+        "Something went wrong while restoring purchases."
+      );
+    } finally {
+      setRestoreLoading(false);
     }
   };
 
@@ -2013,7 +2051,7 @@ function UpgradeScreen() {
               • Priority improvements & new features
             </Text>
 
-            {/* Paywall button */}
+            {/* Purchase button */}
             <TouchableOpacity
               style={[
                 styles.primaryButtonWide,
@@ -2043,7 +2081,33 @@ function UpgradeScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Dev info / free credits */}
+            {/* Restore button */}
+            <TouchableOpacity
+              style={[
+                styles.secondaryButton,
+                {
+                  marginTop: 12,
+                  borderColor: theme.border,
+                  opacity: restoreLoading ? 0.7 : 1,
+                },
+              ]}
+              onPress={handleRestore}
+              disabled={restoreLoading}
+            >
+              {restoreLoading ? (
+                <ActivityIndicator color={theme.textPrimary} />
+              ) : (
+                <Text
+                  style={[
+                    styles.secondaryButtonText,
+                    { color: theme.textPrimary },
+                  ]}
+                >
+                  Restore Purchases
+                </Text>
+              )}
+            </TouchableOpacity>
+
             <Text
               style={[
                 styles.sectionSubtitle,
@@ -2067,14 +2131,14 @@ function UpgradeScreen() {
                 },
               ]}
             >
-              Powered by RevenueCat Test Store – no real charges in dev.
+              Using RevenueCat Test Store – no real charges in dev.
             </Text>
           </View>
         )}
 
+        {/* Theme section (unchanged) */}
         <View style={{ height: 24 }} />
 
-        {/* Theme controls */}
         <Text
           style={[
             styles.sectionTitle,
