@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sametatik7.airesumecoach",
+      "bundleIdentifier": "com.sametatik7.resumeIq",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

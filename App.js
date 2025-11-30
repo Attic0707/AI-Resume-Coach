@@ -2,6 +2,7 @@ import React, {
   useState,
   useCallback,
   useContext,
+  useEffect,
 } from "react";
 import {
   StyleSheet,
@@ -12,6 +13,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Platform
 } from "react-native";
 import {
   NavigationContainer,
@@ -1888,6 +1890,71 @@ function UpgradeScreen() {
     freeCreditsLeft,
   } = useContext(AppContext);
 
+  const [offerings, setOfferings] = useState(null);
+  const [loadingOfferings, setLoadingOfferings] = useState(true);
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
+
+  useEffect(() => {
+    const loadOfferings = async () => {
+      try {
+        const o = await Purchases.getOfferings();
+        // RevenueCat convention: o.current is the main offering
+        setOfferings(o.current);
+      } catch (e) {
+        console.log("RevenueCat offerings error:", e);
+      } finally {
+        setLoadingOfferings(false);
+      }
+    };
+
+    loadOfferings();
+  }, []);
+
+  const handlePurchase = async () => {
+    try {
+      if (!offerings || !offerings.availablePackages?.length) {
+        Alert.alert(
+          "No packages",
+          "No products are configured in the RevenueCat Test Store yet."
+        );
+        return;
+      }
+
+      const pkg = offerings.availablePackages[0]; // first package in current offering
+      console.log('CHECK 1: ', offerings);
+      console.log('CHECK 2: ', pkg);
+      setPurchaseLoading(true);
+
+      const { customerInfo } = await Purchases.purchasePackage(pkg);
+      console.log( "RevenueCat customerInfo.entitlements.active:", customerInfo.entitlements.active );
+
+      const hasPro =
+        customerInfo.entitlements?.active?.premium != null; // "premium" = entitlement identifier in RevenueCat
+
+      if (hasPro) {
+        upgradeToPro(); // update your app state
+        Alert.alert("Success", "You are now ResumeIQ Pro 🎉");
+      } else {
+        Alert.alert(
+          "Info",
+          "Purchase completed but Pro entitlement is not active. Check RevenueCat config."
+        );
+      }
+    } catch (e) {
+      console.log("Purchase error:", e);
+
+      // userCancelled is present on most RevenueCat SDK errors
+      if (!e.userCancelled) {
+        Alert.alert(
+          "Error",
+          "Something went wrong while processing your purchase."
+        );
+      }
+    } finally {
+      setPurchaseLoading(false);
+    }
+  };
+
   return (
     <View
       style={[
@@ -1946,26 +2013,37 @@ function UpgradeScreen() {
               • Priority improvements & new features
             </Text>
 
+            {/* Paywall button */}
             <TouchableOpacity
               style={[
                 styles.primaryButtonWide,
                 {
                   marginTop: 16,
                   backgroundColor: theme.accent,
+                  opacity:
+                    purchaseLoading || loadingOfferings ? 0.7 : 1,
                 },
               ]}
-              onPress={upgradeToPro}
+              onPress={handlePurchase}
+              disabled={purchaseLoading || loadingOfferings}
             >
-              <Text
-                style={[
-                  styles.primaryButtonText,
-                  { color: theme.textOnAccent },
-                ]}
-              >
-                Unlock Pro (Dev mode)
-              </Text>
+              {purchaseLoading ? (
+                <ActivityIndicator color={theme.textOnAccent} />
+              ) : (
+                <Text
+                  style={[
+                    styles.primaryButtonText,
+                    { color: theme.textOnAccent },
+                  ]}
+                >
+                  {loadingOfferings
+                    ? "Loading options..."
+                    : "Unlock Pro (Test Store)"}
+                </Text>
+              )}
             </TouchableOpacity>
 
+            {/* Dev info / free credits */}
             <Text
               style={[
                 styles.sectionSubtitle,
@@ -1977,11 +2055,26 @@ function UpgradeScreen() {
             >
               Free credits left: {freeCreditsLeft}
             </Text>
+
+            <Text
+              style={[
+                styles.sectionSubtitle,
+                {
+                  marginTop: 4,
+                  fontSize: 12,
+                  color: theme.textSecondary,
+                  textAlign: "center",
+                },
+              ]}
+            >
+              Powered by RevenueCat Test Store – no real charges in dev.
+            </Text>
           </View>
         )}
 
         <View style={{ height: 24 }} />
 
+        {/* Theme controls */}
         <Text
           style={[
             styles.sectionTitle,
@@ -2012,7 +2105,8 @@ function UpgradeScreen() {
             <Text
               style={[
                 styles.languageButtonText,
-                themeName === "light" && styles.languageButtonTextActive,
+                themeName === "light" &&
+                  styles.languageButtonTextActive,
               ]}
             >
               Light
@@ -2030,7 +2124,8 @@ function UpgradeScreen() {
             <Text
               style={[
                 styles.languageButtonText,
-                themeName === "dark" && styles.languageButtonTextActive,
+                themeName === "dark" &&
+                  styles.languageButtonTextActive,
               ]}
             >
               Dark
@@ -2071,6 +2166,12 @@ export default function App() {
     freeCreditsLeft,
     consumeCredit,
   };
+
+  useEffect(() => {
+    Purchases.configure({
+      apiKey:"test_occeutlxPVPolTrDEKYepIdSRbT"
+    });
+  }, []);
 
   return (
     <AppContext.Provider value={ctxValue}>
