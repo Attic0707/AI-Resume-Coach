@@ -99,46 +99,46 @@ function simpleInterviewFeedbackLocal(question, answer, language) {
   const score = Math.min(10, baseScore + 1);
 
   const bodyTr = `
-Soru: ${qText}
+    Soru: ${qText}
 
-Güçlü Yönler:
-• Cevap genel olarak anlaşılır.
-• Soruya doğrudan yanıt verme niyeti var.
-• Kendi deneyimlerinden örnek vermeye çalışıyorsun.
+    Güçlü Yönler:
+    • Cevap genel olarak anlaşılır.
+    • Soruya doğrudan yanıt verme niyeti var.
+    • Kendi deneyimlerinden örnek vermeye çalışıyorsun.
 
-Geliştirme Noktaları:
-• STAR yapısını (Situation, Task, Action, Result) daha net kullan.
-• Ölçülebilir sonuçlar ekle (ör: %X artış, Y gün daha hızlı, Z TL tasarruf).
-• Rol ile bağlantıyı daha açık kur (şirketin/birimin hedeflerine nasıl katkı sağlıyorsun?).
+    Geliştirme Noktaları:
+    • STAR yapısını (Situation, Task, Action, Result) daha net kullan.
+    • Ölçülebilir sonuçlar ekle (ör: %X artış, Y gün daha hızlı, Z TL tasarruf).
+    • Rol ile bağlantıyı daha açık kur (şirketin/birimin hedeflerine nasıl katkı sağlıyorsun?).
 
-Öneri:
-• Önce durumu ve görevi 1-2 cümle ile anlat.
-• Sonra hangi aksiyonları aldığını net maddelerle söyle.
-• En sonda sonucu sayılarla ve etkisiyle özetle.
+    Öneri:
+    • Önce durumu ve görevi 1-2 cümle ile anlat.
+    • Sonra hangi aksiyonları aldığını net maddelerle söyle.
+    • En sonda sonucu sayılarla ve etkisiyle özetle.
 
-Tahmini Skor (1–10): ${score}
-`;
+    Tahmini Skor (1–10): ${score}
+    `;
 
   const bodyEn = `
-Question: ${qText}
+    Question: ${qText}
 
-Strengths:
-• Answer is generally understandable.
-• You are attempting to address the question directly.
-• You reference your own experience.
+    Strengths:
+    • Answer is generally understandable.
+    • You are attempting to address the question directly.
+    • You reference your own experience.
 
-Areas to Improve:
-• Use the STAR structure (Situation, Task, Action, Result) more clearly.
-• Add measurable outcomes (e.g., %X increase, Y days faster, Z cost savings).
-• Tie your answer explicitly to the role and company goals.
+    Areas to Improve:
+    • Use the STAR structure (Situation, Task, Action, Result) more clearly.
+    • Add measurable outcomes (e.g., %X increase, Y days faster, Z cost savings).
+    • Tie your answer explicitly to the role and company goals.
 
-Suggestion:
-• Briefly state the situation and task in 1–2 sentences.
-• Then describe the specific actions you took.
-• Finish with the result, using numbers where possible.
+    Suggestion:
+    • Briefly state the situation and task in 1–2 sentences.
+    • Then describe the specific actions you took.
+    • Finish with the result, using numbers where possible.
 
-Estimated Score (1–10): ${score}
-`;
+    Estimated Score (1–10): ${score}
+    `;
 
   return header + (isTurkish ? bodyTr : bodyEn);
 }
