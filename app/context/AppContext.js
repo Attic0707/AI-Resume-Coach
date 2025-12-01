@@ -1,10 +1,5 @@
 // app/context/AppContext.js
-import React, {
-  createContext,
-  useMemo,
-  useState,
-  useContext,
-} from "react";
+import React, { createContext, useMemo, useState, useContext, } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
@@ -96,10 +91,7 @@ export async function saveDocument({ title, type, content }) {
     };
 
     const next = [...docs, newDoc];
-    await AsyncStorage.setItem(
-      DOCS_STORAGE_KEY,
-      JSON.stringify(next)
-    );
+    await AsyncStorage.setItem( DOCS_STORAGE_KEY, JSON.stringify(next) );
   } catch (e) {
     console.log("saveDocument error:", e);
   }
@@ -148,21 +140,8 @@ export function ProBadge() {
   if (!isPro) return null;
 
   return (
-    <View
-      style={{
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 999,
-        backgroundColor: theme.accent,
-      }}
-    >
-      <Text
-        style={{
-          color: theme.textOnAccent,
-          fontSize: 12,
-          fontWeight: "700",
-        }}
-      >
+    <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: theme.accent, }} >
+      <Text style={{ color: theme.textOnAccent, fontSize: 12, fontWeight: "700", }} >
         PRO
       </Text>
     </View>
@@ -171,16 +150,7 @@ export function ProBadge() {
 
 export function LockIcon({ color = "#9ca3af", size = 14, style }) {
   return (
-    <Text
-      style={[
-        {
-          fontSize: size,
-          color,
-          marginLeft: 6,
-        },
-        style,
-      ]}
-    >
+    <Text style={[ { fontSize: size, color, marginLeft: 6, }, style, ]} >
       🔒
     </Text>
   );
@@ -191,36 +161,15 @@ export function UsageBanner({ style }) {
 
   if (isPro) {
     return (
-      <Text
-        style={[
-          styles.sectionSubtitle,
-          {
-            color: theme.textSecondary,
-            marginTop: 4,
-            marginBottom: 8,
-          },
-          style,
-        ]}
-      >
+      <Text style={[ styles.sectionSubtitle, { color: theme.textSecondary, marginTop: 4, marginBottom: 8, }, style, ]} >
         ✅ You are on{" "}
-        <Text style={{ fontWeight: "600" }}>ResumeIQ Pro</Text>. Unlimited AI
-        calls for resume, job match and interview coaching.
+        <Text style={{ fontWeight: "600" }}>ResumeIQ Pro</Text>. Unlimited AI calls for resume, job match and interview coaching.
       </Text>
     );
   }
 
   return (
-    <Text
-      style={[
-        styles.sectionSubtitle,
-        {
-          color: theme.textSecondary,
-          marginTop: 4,
-          marginBottom: 8,
-        },
-        style,
-      ]}
-    >
+    <Text style={[ styles.sectionSubtitle, { color: theme.textSecondary, marginTop: 4, marginBottom: 8, }, style, ]} >
       Free plan:{" "}
       <Text style={{ fontWeight: "600" }}>
         {freeCreditsLeft} AI credits
@@ -244,53 +193,20 @@ export function ProOnlyFeatureTile({ title, subtitle, onPress }) {
   };
 
   return (
-    <TouchableOpacity
-      onPress={handlePress}
-      activeOpacity={0.8}
-      style={[
-        styles.resultBox,
-        {
-          backgroundColor: theme.bgCard,
-          borderColor: theme.border,
-          opacity: locked ? 0.7 : 1,
-        },
-      ]}
-    >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          marginBottom: 4,
-        }}
-      >
-        <Text
-          style={[
-            styles.resultTitle,
-            { color: theme.textPrimary },
-          ]}
-        >
+    <TouchableOpacity activeOpacity={0.8} style={[ styles.resultBox, { backgroundColor: theme.bgCard, borderColor: theme.border, opacity: locked ? 0.7 : 1, }, ]} onPress={handlePress} >
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4, }} >
+        <Text style={[ styles.resultTitle, { color: theme.textPrimary }, ]} >
           {title}
         </Text>
         {locked && <LockIcon color={theme.textSecondary} />}
       </View>
 
-      <Text
-        style={[
-          styles.resultText,
-          { color: theme.textSecondary },
-        ]}
-      >
+      <Text style={[ styles.resultText, { color: theme.textSecondary }, ]} >
         {subtitle}
       </Text>
 
       {locked && (
-        <Text
-          style={{
-            marginTop: 8,
-            fontSize: 12,
-            color: theme.textSecondary,
-          }}
-        >
+        <Text style={{ marginTop: 8, fontSize: 12, color: theme.textSecondary, }} >
           Pro only feature – tap to upgrade.
         </Text>
       )}
