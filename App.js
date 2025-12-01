@@ -938,7 +938,7 @@ function JobMatchScreen({ navigation }) {
   };
 
   const handleSaveCoverLetter = async () => {
-    if (!coverLetter) {
+    if (!coverLetter || !coverLetter.trim()) {
       Alert.alert(
         isTurkish ? "Bilgi" : "Info",
         isTurkish
@@ -947,30 +947,30 @@ function JobMatchScreen({ navigation }) {
       );
       return;
     }
-    const doc = {
-      id: Date.now().toString() + "_cl",
-      type: "cover_letter",
-      title: isTurkish ? "Ön Yazı" : "Cover Letter",
-      language,
-      createdAt: new Date().toISOString(),
-      content: coverLetter,
-    };
-    try {
-      await addDocument(doc);
-      Alert.alert(
-        isTurkish ? "Kaydedildi" : "Saved",
-        isTurkish
-          ? "Ön yazı 'My Documents' içine kaydedildi."
-          : "Cover letter saved to My Documents."
-      );
-    } catch (e) {
-      Alert.alert(
-        isTurkish ? "Hata" : "Error",
-        isTurkish
-          ? "Belge kaydedilirken bir sorun oluştu."
-          : "Something went wrong while saving."
-      );
+
+    let company = "";
+
+    if (jobDescription && jobDescription.trim()) {
+      const firstLine = jobDescription.split("\n")[0];
+      const match = firstLine.match(/at\s+(.+)/i);
+      if (match && match[1]) {
+        company = match[1].trim();
+      }
     }
+
+    const title =
+      company && company.length > 0
+        ? `Cover Letter – ${company}`
+        : "Cover Letter";
+
+    await saveDocument({
+      title,
+      type: "cover-letter",
+      content: coverLetter,
+    });
+
+    Alert.alert("Saved", "Your cover letter was saved to My Documents.");
+
   };
 
   return (

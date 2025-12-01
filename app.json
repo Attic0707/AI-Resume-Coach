@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ai-resume-coach",
-    "slug": "ai-resume-coach",
+    "name": "resume-iq",
+    "slug": "resume-iq",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,12 +14,15 @@
     },
     "ios": {
       "supportsTablet": true,
+      "buildNumber": "1",
       "bundleIdentifier": "com.sametatik7.resumeIq",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
+      "package": "com.tavanarasi.resumeIq",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
