@@ -120,18 +120,30 @@ export default function OptimizeResumeScreen({ navigation }) {
           {isTurkish ? "Hedef Pozisyon (opsiyonel)" : "Target Role (optional)"}
         </Text>
 
-        <TextInput value={targetRole} onChangeText={setTargetRole}
-          placeholder={ isTurkish ? "Ör: Kıdemli Salesforce Geliştiricisi" : "e.g. Senior Salesforce Developer" } placeholderTextColor="#6b7280"
-          style={[ styles.input, { backgroundColor: theme.bg, borderColor: theme.border, color: theme.textPrimary, }, ]} />
+        <View style={{ position: "relative" }}>
+          <TextInput value={targetRole} onChangeText={setTargetRole}
+            placeholder={ isTurkish ? "Ör: Kıdemli Salesforce Geliştiricisi" : "e.g. Senior Salesforce Developer" } placeholderTextColor="#6b7280" maxLength={100}
+            style={[ styles.input, { backgroundColor: theme.bg, borderColor: theme.border, color: theme.textPrimary, paddingRight: 70,}, ]} />
+
+          <Text style={{ position: "absolute", right: 10,  top: 10, color: "#9ca3af", fontSize: 12, }}>
+            {targetRole.length} / 100
+          </Text>
+        </View>
 
         {/* Resume input */}
         <Text style={[ styles.inputLabel, { color: theme.textPrimary }, ]} >
           {isTurkish ? "Mevcut CV Metnin" : "Your Current Resume Text"}
         </Text>
 
-        <TextInput value={resumeText} onChangeText={setResumeText}
-          placeholder={ isTurkish ? "CV’ni buraya yapıştır veya yaz..." : "Paste or type your resume here..." }  placeholderTextColor="#6b7280"
-          style={[ styles.textArea, { backgroundColor: theme.bg, borderColor: theme.border, color: theme.textPrimary, }, ]} multiline={true} textAlignVertical="top" />
+        <View style={{ position: "relative" }}>
+          <TextInput value={resumeText} onChangeText={setResumeText}
+            placeholder={ isTurkish ? "CV’ni buraya yapıştır veya yaz..." : "Paste or type your resume here..." }  placeholderTextColor="#6b7280"
+            style={[ styles.textArea, { backgroundColor: theme.bg, borderColor: theme.border, color: theme.textPrimary, paddingBottom: 25, paddingRight: 40,}, ]} multiline={true} maxLength={20000} textAlignVertical="top" />
+
+          <Text style={{ position: "absolute", right: 10,  bottom: 20, color: "#9ca3af", fontSize: 12, }}>
+            {resumeText.length} / 20000
+          </Text>
+        </View>
 
         {/* Sample + Rewrite */}
         <View style={styles.buttonRow}>

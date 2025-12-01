@@ -15,6 +15,18 @@ router.post("/optimize-resume", async (req, res) => {
       .json({ error: "resumeText (string) is required" });
   }
 
+  if (resumeText.length > 20000) {
+    return res.status(400).json({
+      error: "Resume is too long. Maximum allowed is 20,000 characters."
+    });
+  }
+
+  if (targetRole.length > 100) {
+    return res.status(400).json({
+      error: "Target Role is too long. Maximum allowed is 100 characters."
+    });
+  }
+
   const isTurkish = language === "tr";
 
   if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
