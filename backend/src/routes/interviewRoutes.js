@@ -15,6 +15,12 @@ router.post("/interview-feedback", async (req, res) => {
       .json({ error: "answer (string) is required" });
   }
 
+  if (answer.length > 500) {
+    return res.status(400).json({
+      error: "Answer is too long. Maximum allowed is 500 characters."
+    });
+  }
+
   const isTurkish = language === "tr";
 
   if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
@@ -86,6 +92,12 @@ router.post("/interview-feedback", async (req, res) => {
 router.post("/interview-questions", async (req, res) => {
   const { role, level, mode = "quick", language = "en" } = req.body || {};
   const isTurkish = language === "tr";
+
+  if (role.length > 100) {
+    return res.status(400).json({
+      error: "Role is too long. Maximum allowed is 100 characters."
+    });
+  }
 
   if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
     const questions = simpleInterviewQuestionsLocal( role || "", level, mode, language );

@@ -142,9 +142,16 @@ export default function InterviewCoachScreen({ navigation }) {
         <Text style={[ styles.inputLabel, { color: theme.textPrimary }, ]} >
           {isTurkish ? "Hedef Pozisyon" : "Target Role"}
         </Text>
-        <TextInput value={role} onChangeText={setRole}
-          placeholder={ isTurkish ? "Ör: Kıdemli Salesforce Geliştiricisi" : "e.g. Senior Salesforce Developer" } placeholderTextColor="#6b7280"
-          style={[ styles.input, { backgroundColor: theme.bg, borderColor: theme.border, color: theme.textPrimary, }, ]} />
+
+        <View style={{ position: "relative" }}>
+          <TextInput value={role} onChangeText={setRole}
+            placeholder={ isTurkish ? "Ör: Kıdemli Salesforce Geliştiricisi" : "e.g. Senior Salesforce Developer" } placeholderTextColor="#6b7280" maxLength={100}
+            style={[ styles.input, { backgroundColor: theme.bg, borderColor: theme.border, color: theme.textPrimary, paddingRight: 70,}, ]} />
+
+          <Text style={{ position: "absolute", right: 10,  top: 10, color: "#9ca3af", fontSize: 12, }}>
+            {role.length} / 100
+          </Text>
+        </View>
 
         {/* Level selector */}
         <Text style={[ styles.inputLabel, { color: theme.textPrimary }, ]} >
@@ -218,10 +225,15 @@ export default function InterviewCoachScreen({ navigation }) {
               {currentQuestion}
             </Text>
 
-            <TextInput value={currentAnswer} onChangeText={setCurrentAnswer}
-              placeholder={ isTurkish ? "Cevabını buraya yaz..." : "Type your answer here..." } placeholderTextColor="#6b7280"
-              style={[ styles.coachAnswerInput, { backgroundColor: theme.bg, borderColor: theme.border, color: theme.textPrimary, }, ]} 
-              multiline={true} textAlignVertical="top" />
+            <View style={{ position: "relative" }}>
+              <TextInput value={currentAnswer} onChangeText={setCurrentAnswer}
+                placeholder={ isTurkish ? "Cevabını buraya yaz..." : "Type your answer here..." } placeholderTextColor="#6b7280" maxLength={100}
+                style={[ styles.coachAnswerInput, { backgroundColor: theme.bg, borderColor: theme.border, color: theme.textPrimary, paddingRight: 70,}, ]} multiline={true} textAlignVertical="top"/>
+
+              <Text style={{ position: "absolute", right: 10,  bottom: 10, color: "#9ca3af", fontSize: 12, }}>
+                {currentAnswer.length} / 500
+              </Text>
+            </View>
 
             <TouchableOpacity style={[ styles.primaryButtonWide, { marginTop: 8, backgroundColor: theme.accent }, ]} onPress={handleGetFeedback} disabled={loading} >
               {loading ? (
