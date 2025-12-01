@@ -17,6 +17,7 @@ export default function JobMatchScreen({ navigation }) {
   const [loadingResume, setLoadingResume] = useState(false);
   const [loadingCoverLetter, setLoadingCoverLetter] = useState(false);
   const isTurkish = language === "tr";
+  const disclaimer = language === "tr" ? "*AI tarafından üretilmiştir. Lütfen başvurmadan önce gözden geçirin." : "*AI-generated. Please review before using in applications.";
 
   const checkPaywall = () => {
     if (isPro) return true;
@@ -158,6 +159,11 @@ export default function JobMatchScreen({ navigation }) {
           {isTurkish
             ? "CV’ni ve iş ilanını gir, AI senin için hem uyarlanmış bir CV özeti hem de ön yazı oluştursun."
             : "Provide your resume and the job description, and let AI tailor both your resume and a cover letter for this role."}
+        </Text>
+
+        {/* Disclaimer */}
+        <Text style={[ styles.sectionSubtitle, { color: theme.textSecondary }, ]}> 
+          {disclaimer}
         </Text>
 
         {/* Language toggle */}

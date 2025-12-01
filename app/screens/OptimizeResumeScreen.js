@@ -14,6 +14,7 @@ export default function OptimizeResumeScreen({ navigation }) {
   const [optimizedText, setOptimizedText] = useState("");
   const [loading, setLoading] = useState(false);
   const isTurkish = language === "tr";
+  const disclaimer = language === "tr" ? "*AI tarafından üretilmiştir. Lütfen başvurmadan önce gözden geçirin." : "*AI-generated. Please review before using in applications.";
 
   const handleUseSample = () => {
     setResumeText(
@@ -56,6 +57,7 @@ export default function OptimizeResumeScreen({ navigation }) {
       }
 
       setOptimizedText(data.optimizedText);
+
       // (Optional) if you wanna debug where it came from:
       // console.log("Optimize source:", data.source);
     } catch (e) {
@@ -92,6 +94,11 @@ export default function OptimizeResumeScreen({ navigation }) {
           {isTurkish
             ? "CV metnini yapıştır, hedef pozisyonu seç ve AI senin için daha güçlü bir versiyon üretsin."
             : "Paste your resume, set your target role and let AI generate a stronger version for you."}
+        </Text>
+
+        {/* Disclaimer */}
+        <Text style={[ styles.sectionSubtitle, { color: theme.textSecondary }, ]}> 
+          {disclaimer}
         </Text>
 
         {/* Language toggle */}

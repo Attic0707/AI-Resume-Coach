@@ -28,7 +28,7 @@ export default function App() {
     <AppProvider>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Welcome" screenOptions={{ headerShown: true }} >
-          <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }}   />
+          <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Home" component={HomeScreen} options={{ title: "ResumeIQ" }} />
           <Stack.Screen name="OptimizeResume" component={OptimizeResumeScreen} options={{ title: "Optimize Resume" }}/>
           <Stack.Screen name="JobMatch" component={JobMatchScreen} options={{ title: "Job Match" }}/>
