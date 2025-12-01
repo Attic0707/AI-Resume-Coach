@@ -1,6 +1,6 @@
 // app/context/AppContext.js
 import React, { createContext, useMemo, useState, useContext, } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Image } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import styles from "../styles";
@@ -210,6 +210,26 @@ export function ProOnlyFeatureTile({ title, subtitle, onPress }) {
           Pro only feature – tap to upgrade.
         </Text>
       )}
+    </TouchableOpacity>
+  );
+}
+
+export function FeatureCard({ title, description, icon, onPress }) {
+  const { theme } = useContext(AppContext);
+
+  return (
+    <TouchableOpacity style={[ styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border, }, ]} onPress={onPress} >
+      <View style={styles.iconWrapper}>
+        <Image source={icon} style={styles.iconImage} resizeMode="contain" />
+      </View>
+      <View style={styles.cardTextWrapper}>
+        <Text style={[ styles.cardTitle, { color: theme.textPrimary }, ]} >
+          {title}
+        </Text>
+        <Text style={[ styles.cardDescription, { color: theme.textSecondary }, ]} >
+          {description}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }

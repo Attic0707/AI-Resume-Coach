@@ -2,7 +2,7 @@
 import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
-      // Welcome
+  // Welcome
   welcomeContainer: {
     flex: 1,
     alignItems: "center",
@@ -99,10 +99,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
   },
-  cardEmoji: {
-    fontSize: 28,
-    marginRight: 12,
-  },
   cardTextWrapper: {
     flex: 1,
   },
@@ -113,6 +109,18 @@ const styles = StyleSheet.create({
   },
   cardDescription: {
     fontSize: 13,
+  },
+  iconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  iconImage: {
+    width: "100%",
+    height: "100%",
   },
 
   // Shared sections
@@ -211,6 +219,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     padding: 14,
+    marginBottom: 12,
   },
   resultTitle: {
     fontSize: 15,

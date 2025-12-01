@@ -1,27 +1,16 @@
 // app/screens/HomeScreen.js
 import React, { useContext } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, } from "react-native";
 
-import { AppContext, ProBadge, ProOnlyFeatureTile, } from "../context/AppContext";
+import { AppContext, ProBadge, ProOnlyFeatureTile, FeatureCard } from "../context/AppContext";
 import styles from "../styles";
-
-function FeatureCard({ title, description, emoji, onPress }) {
-  const { theme } = useContext(AppContext);
-
-  return (
-    <TouchableOpacity style={[ styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border, }, ]} onPress={onPress} >
-      <Text style={styles.cardEmoji}>{emoji}</Text>
-      <View style={styles.cardTextWrapper}>
-        <Text style={[ styles.cardTitle, { color: theme.textPrimary }, ]} >
-          {title}
-        </Text>
-        <Text style={[ styles.cardDescription, { color: theme.textSecondary }, ]} >
-          {description}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-}
+const optimizeIcon = require("../../assets/icons/optimize.png");
+const matchIcon = require("../../assets/icons/match.png");
+const coachIcon = require("../../assets/icons/coach.png");
+const salaryIcon = require("../../assets/icons/salary.png");
+const advancedIcon = require("../../assets/icons/advanced.png");
+const documentsIcon = require("../../assets/icons/docs.png");
+const upgradeIcon = require("../../assets/icons/upgrade.png");
 
 export default function HomeScreen({ navigation }) {
   const { theme, isPro, freeCreditsLeft } = useContext(AppContext);
@@ -34,10 +23,10 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <Text style={[ styles.homeTitle, { color: theme.textPrimary }, ]} >
-        What do you want to work on?
+        Ready to get your dream job?
       </Text>
       <Text style={[ styles.homeSubtitle, { color: theme.textSecondary }, ]} >
-        Pick a tool and I’ll help you step by step.
+        Optimize your CV, match job descriptions and practice interviews with AI.
       </Text>
 
       {!isPro && (
@@ -47,15 +36,15 @@ export default function HomeScreen({ navigation }) {
       )}
 
       <ScrollView contentContainerStyle={styles.cardList} showsVerticalScrollIndicator={false} >
-        <FeatureCard title="Optimize My Resume" description="Rewrite and improve your CV for maximum impact." emoji="📄" onPress={() => navigation.navigate("OptimizeResume")} />
-        <FeatureCard title="Match to Job Description" description="Tailor your resume & cover letter for a specific role." emoji="🎯" onPress={() => navigation.navigate("JobMatch")} />
-        <FeatureCard title="Interview Coach" description="Practice questions and get instant feedback." emoji="🎤" onPress={() => navigation.navigate("InterviewCoach")} />
+        <FeatureCard title="Optimize My Resume" description="Rewrite and improve your CV for maximum impact." icon={optimizeIcon} onPress={() => navigation.navigate("OptimizeResume")} />
+        <FeatureCard title="Match to Job Description" description="Tailor your resume & cover letter for a specific role." icon={matchIcon} onPress={() => navigation.navigate("JobMatch")} />
+        <FeatureCard title="Interview Coach" description="Practice questions and get instant feedback." icon={coachIcon} onPress={() => navigation.navigate("InterviewCoach")} />
 
-        <ProOnlyFeatureTile title="Salary Benchmarks" subtitle="Coming soon: Pro-only salary insights for your target role." onPress={() => navigation.navigate("Upgrade")} />
-        <ProOnlyFeatureTile title="Advanced Templates" subtitle="Export ATS-ready resumes with different layouts and tones." onPress={() => navigation.navigate("AdvancedTemplates")}/> 
+        <ProOnlyFeatureTile title="Salary Benchmarks" subtitle="Coming soon: Pro-only salary insights for your target role." icon={salaryIcon} onPress={() => navigation.navigate("Upgrade")} />
+        <ProOnlyFeatureTile title="Advanced Templates" subtitle="Export ATS-ready resumes with different layouts and tones." icon={advancedIcon} onPress={() => navigation.navigate("AdvancedTemplates")}/> 
 
-        <FeatureCard title="My Documents" description="View, edit and export saved resumes & letters." emoji="📁" onPress={() => navigation.navigate("Documents")} />
-        <FeatureCard title="Upgrade & Theme" description="Manage plan and switch light/dark mode." emoji="⭐" onPress={() => navigation.navigate("Upgrade")} />
+        <FeatureCard title="My Documents" description="View, edit and export saved resumes & letters." icon={documentsIcon} onPress={() => navigation.navigate("Documents")} />
+        <FeatureCard title="Upgrade & Theme" description="Manage plan and switch light/dark mode." icon={upgradeIcon} onPress={() => navigation.navigate("Upgrade")} />
       </ScrollView>
     </View>
   );
