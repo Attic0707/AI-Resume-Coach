@@ -8,6 +8,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
+    bottom: 10
   },
   appTitle: {
     fontSize: 24,
@@ -28,6 +29,45 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontWeight: "600",
     fontSize: 16,
+  },
+  background: { 
+    flex: 1
+  },
+  shineOverlay: {
+    position: "absolute",
+    top: -40,
+    left: -80,
+    width: 120,
+    height: 340,
+    backgroundColor: "rgba(255, 255, 255, 0.35)",
+    borderRadius: 60,
+  },
+  circleButton: {
+    width: 300,
+    height: 70,
+    borderRadius: 130,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 18,
+    elevation: 12,
+    overflow: "hidden",
+  },
+  centerWrapper: {
+    position: "absolute",
+    bottom: 80,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+  circleText: {
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+    lineHeight: 30,
   },
 
   // Home

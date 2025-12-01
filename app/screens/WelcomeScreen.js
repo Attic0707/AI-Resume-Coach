@@ -1,28 +1,43 @@
 // app/screens/WelcomeScreen.js
-import React, { useContext } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import React, { useContext, useState, useEffect, useRef } from "react";
+import { View, Text, TouchableOpacity, ImageBackground, Animated } from "react-native";
 
 import { AppContext } from "../context/AppContext";
 import styles from "../styles";
+const image = require("../../assets/splash-icon.png");
 
 export default function WelcomeScreen({ navigation }) {
   const { theme } = useContext(AppContext);
+  const shineAnim = useRef(new Animated.Value(0)).current;
+  const shineTranslateX = shineAnim.interpolate({ inputRange: [0, 1], outputRange: [-260, 260], });
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(shineAnim, {
+        toValue: 1,
+        duration: 2500,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [shineAnim]);
 
   return (
-    <View style={[ styles.welcomeContainer, { backgroundColor: theme.bg }, ]} >
-      <Text style={[ styles.appTitle, { color: theme.textPrimary }, ]} >
-        AI Resume & Interview Coach
-      </Text>
-      <Text style={[ styles.appSubtitle, { color: theme.textSecondary }, ]}  >
-        Optimize your CV, match job descriptions and practice interviews
-        with AI.
-      </Text>
+    <ImageBackground source={image} style={styles.background} resizeMode="cover" >
+      {/* <View style={[ styles.welcomeContainer, {  backgroundColor: "transparent" }, ]} > */}
+        {/* 
+        <Text style={[ styles.appTitle, { color: theme.textPrimary }, ]} > Resume IQ </Text> 
+        <Text style={[ styles.appSubtitle, { color: theme.textSecondary }, ]}  > Optimize your CV, match job descriptions and practice interviews with AI. </Text>
+        */}
 
-      <TouchableOpacity style={[ styles.primaryButton, { backgroundColor: theme.accent }, ]} onPress={() => navigation.replace("Home")} >
-        <Text style={[ styles.primaryButtonText, { color: theme.textOnAccent }, ]} >
-          Continue
-        </Text>
-      </TouchableOpacity>
-    </View>
+        <View style={styles.centerWrapper}>
+          <TouchableOpacity style={[ styles.circleButton, {backgroundColor: theme.accent},] } onPress={() => navigation.replace("Home")} >
+            <Animated.View pointerEvents="none" style={[ styles.shineOverlay, { transform: [ { translateX: shineTranslateX }, { rotate: "25deg" }, ], }, ]} />
+            <Text style={[ styles.circleText, { color: theme.textOnAccent }, ]} >
+              Start
+            </Text>
+          </TouchableOpacity>
+        </View>
+      {/* </View> */}
+    </ImageBackground>
   );
 }
