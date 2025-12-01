@@ -1,16 +1,9 @@
 // backend/src/routes/interviewRoutes.js
 const express = require("express");
 const OpenAI = require("openai");
-const {
-  simpleInterviewFeedbackLocal,
-  simpleInterviewQuestionsLocal,
-} = require("../utils/fallbacks");
-
+const { simpleInterviewFeedbackLocal, simpleInterviewQuestionsLocal, } = require("../utils/fallbacks");
 const router = express.Router();
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, });
 
 // /interview-feedback
 router.post("/interview-feedback", async (req, res) => {
@@ -25,16 +18,8 @@ router.post("/interview-feedback", async (req, res) => {
   const isTurkish = language === "tr";
 
   if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
-    const feedback = simpleInterviewFeedbackLocal(
-      question || "",
-      answer,
-      language
-    );
-    return res.json({
-      feedback,
-      score: 7,
-      source: "local-mock",
-    });
+    const feedback = simpleInterviewFeedbackLocal( question || "", answer, language );
+    return res.json({ feedback, score: 7, source: "local-mock", });
   }
 
   try {
@@ -43,21 +28,21 @@ router.post("/interview-feedback", async (req, res) => {
       : "You are an experienced interview coach. Your job is to evaluate the candidate's answer using the STAR framework (Situation, Task, Action, Result), highlighting strengths, areas for improvement, and giving a final score from 1 to 10.";
 
     const userPrompt = `
-Interview question:
-${question || "(not provided)"}
+      Interview question:
+      ${question || "(not provided)"}
 
-Candidate answer:
-${answer}
+      Candidate answer:
+      ${answer}
 
-Instructions:
-- Briefly restate what the candidate is trying to say.
-- Evaluate the answer using STAR (Situation, Task, Action, Result).
-- Highlight 3–5 strengths.
-- Highlight 3–5 specific areas to improve.
-- Provide concrete suggestions on how to make this answer stronger next time.
-- At the end, give a score from 1 to 10 in the format: "Score: X/10".
-- Respond in ${isTurkish ? "Turkish" : "English"}.
-`;
+      Instructions:
+      - Briefly restate what the candidate is trying to say.
+      - Evaluate the answer using STAR (Situation, Task, Action, Result).
+      - Highlight 3–5 strengths.
+      - Highlight 3–5 specific areas to improve.
+      - Provide concrete suggestions on how to make this answer stronger next time.
+      - At the end, give a score from 1 to 10 in the format: "Score: X/10".
+      - Respond in ${isTurkish ? "Turkish" : "English"}.
+      `;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
@@ -88,19 +73,9 @@ Instructions:
     console.error("Error in /interview-feedback:", err);
 
     if (err?.code === "insufficient_quota" || err?.status === 429) {
-      const feedback = simpleInterviewFeedbackLocal(
-        question || "",
-        answer,
-        language
-      );
-      return res.status(200).json({
-        feedback,
-        score: 7,
-        source: "local-fallback",
-        warning: isTurkish
-          ? "OpenAI kotası doldu, local mock kullanılıyor."
-          : "OpenAI quota exceeded, using local fallback.",
-      });
+      const feedback = simpleInterviewFeedbackLocal( question || "", answer, language );
+      return res.status(200).json({ feedback, score: 7, source: "local-fallback",
+        warning: isTurkish ? "OpenAI kotası doldu, local mock kullanılıyor." : "OpenAI quota exceeded, using local fallback.", });
     }
 
     res.status(500).json({ error: "Server error" });
@@ -113,12 +88,7 @@ router.post("/interview-questions", async (req, res) => {
   const isTurkish = language === "tr";
 
   if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
-    const questions = simpleInterviewQuestionsLocal(
-      role || "",
-      level,
-      mode,
-      language
-    );
+    const questions = simpleInterviewQuestionsLocal( role || "", level, mode, language );
     return res.json({ questions, source: "local-mock" });
   }
 
@@ -128,17 +98,17 @@ router.post("/interview-questions", async (req, res) => {
       : "You are an experienced interview coach. Your job is to generate realistic interview questions for a given role, level, and session type.";
 
     const userPrompt = `
-Role: ${role || "(not specified)"}
-Level: ${level || "(not specified)"}
-Mode (session length): ${mode || "quick"}
+      Role: ${role || "(not specified)"}
+      Level: ${level || "(not specified)"}
+      Mode (session length): ${mode || "quick"}
 
-Instructions:
-- Generate interview questions tailored to this role and level.
-- Include a mix of behavioral and role-specific questions.
-- Respond as plain text, one question per line.
-- Do not number them, just one question per line.
-- Language: ${isTurkish ? "Turkish" : "English"}.
-`;
+      Instructions:
+      - Generate interview questions tailored to this role and level.
+      - Include a mix of behavioral and role-specific questions.
+      - Respond as plain text, one question per line.
+      - Do not number them, just one question per line.
+      - Language: ${isTurkish ? "Turkish" : "English"}.
+      `;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
@@ -163,32 +133,16 @@ Instructions:
     }
 
     if (!questions.length) {
-      questions = simpleInterviewQuestionsLocal(
-        role || "",
-        level,
-        mode,
-        language
-      );
-      return res.json({
-        questions,
-        source: "local-fallback",
-      });
+      questions = simpleInterviewQuestionsLocal( role || "", level, mode, language );
+      return res.json({ questions, source: "local-fallback", });
     }
 
     res.json({ questions, source: "openai" });
   } catch (err) {
     console.error("Error in /interview-questions:", err);
 
-    const questions = simpleInterviewQuestionsLocal(
-      role || "",
-      level,
-      mode,
-      language
-    );
-    res.status(200).json({
-      questions,
-      source: "local-fallback",
-    });
+    const questions = simpleInterviewQuestionsLocal( role || "", level, mode, language );
+    res.status(200).json({ questions, source: "local-fallback", });
   }
 });
 
