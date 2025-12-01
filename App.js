@@ -32,52 +32,7 @@ import { buildResumeHtml } from "./app/utils/templates";
 const Stack = createNativeStackNavigator();
 
 // ---------- AsyncStorage helpers ----------
-const DOCUMENTS_KEY = "ai_resume_documents_v1";
-
-async function addDocument(doc) {
-  try {
-    const existing = await AsyncStorage.getItem(DOCUMENTS_KEY);
-    const list = existing ? JSON.parse(existing) : [];
-    list.unshift(doc);
-    await AsyncStorage.setItem(DOCUMENTS_KEY, JSON.stringify(list));
-  } catch (e) {
-    console.log("Save doc error:", e);
-    throw e;
-  }
-}
-
-async function getDocuments() {
-  try {
-    const existing = await AsyncStorage.getItem(DOCUMENTS_KEY);
-    return existing ? JSON.parse(existing) : [];
-  } catch (e) {
-    console.log("Load docs error:", e);
-    return [];
-  }
-}
-
-async function removeDocument(id) {
-  try {
-    const existing = await AsyncStorage.getItem(DOCUMENTS_KEY);
-    const list = existing ? JSON.parse(existing) : [];
-    const updated = list.filter((d) => d.id !== id);
-    await AsyncStorage.setItem(DOCUMENTS_KEY, JSON.stringify(updated));
-    return updated;
-  } catch (e) {
-    console.log("Delete doc error:", e);
-    throw e;
-  }
-}
-
-function formatDate(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return `${d.toLocaleDateString()} ${d.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  })}`;
-}
+const DOCS_STORAGE_KEY = "@resumeiq_docs_v2";
 
 // Small "PRO" badge for headers
 function ProBadge() {
@@ -144,6 +99,67 @@ function UsageBanner({ style }) {
       left today. Upgrade to Pro for unlimited usage.
     </Text>
   );
+}
+
+function generateId() {
+  return Date.now().toString() + "_" + Math.random().toString(16).slice(2);
+}
+
+function formatDate(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  return d.toLocaleDateString();
+}
+
+function getTypeLabel(type) {
+  switch (type) {
+    case "resume":
+      return "Resume";
+    case "job-match":
+      return "Tailored Resume";
+    case "cover-letter":
+      return "Cover Letter";
+    case "interview":
+      return "Interview Notes";
+    default:
+      return "Document";
+  }
+}
+
+function getTypeColor(type, theme) {
+  switch (type) {
+    case "resume":
+      return "#22c55e"; // green
+    case "job-match":
+      return "#3b82f6"; // blue
+    case "cover-letter":
+      return "#eab308"; // yellow
+    case "interview":
+      return "#a855f7"; // purple
+    default:
+      return theme.accent;
+  }
+}
+
+async function saveDocument({ title, type, content }) {
+  try {
+    const raw = await AsyncStorage.getItem(DOCS_STORAGE_KEY);
+    const existing = raw ? JSON.parse(raw) : [];
+    const docs = Array.isArray(existing) ? existing : [];
+
+    const newDoc = {
+      id: generateId(),
+      title: title || "Untitled",
+      type: type || "resume", // "resume" | "job-match" | "cover-letter" | "interview"
+      createdAt: Date.now(),
+      content: content || "",
+    };
+
+    const next = [...docs, newDoc];
+    await AsyncStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(next));
+  } catch (e) {
+    console.log("saveDocument error:", e);
+  }
 }
 
 // ---------- App Context & Theme ----------
@@ -524,42 +540,22 @@ function OptimizeResumeScreen({ navigation }) {
   };
 
   const handleSaveOptimized = async () => {
-    if (!optimizedText) {
-      Alert.alert(
-        language === "tr" ? "Bilgi" : "Info",
-        language === "tr"
-          ? "Önce CV’yi yeniden yazdır."
-          : "Generate an optimized resume first."
-      );
+    if (!optimizedText || !optimizedText.trim()) {
+      Alert.alert("Nothing to save", "Generate a resume first.");
       return;
     }
-    const isTurkish = language === "tr";
-    const doc = {
-      id: Date.now().toString(),
-      type: "optimized_resume",
-      title:
-        (isTurkish ? "Optimize CV - " : "Optimized Resume - ") +
-        (targetRole || (isTurkish ? "Genel" : "General")),
-      language,
-      createdAt: new Date().toISOString(),
+
+    const rolePart = targetRole?.trim()
+      ? ` – ${targetRole.trim()}`
+      : "";
+
+    await saveDocument({
+      title: `Optimized Resume${rolePart}`,
+      type: "resume",
       content: optimizedText,
-    };
-    try {
-      await addDocument(doc);
-      Alert.alert(
-        isTurkish ? "Kaydedildi" : "Saved",
-        isTurkish
-          ? "Belge 'My Documents' içinde saklandı."
-          : "Document has been saved to My Documents."
-      );
-    } catch (e) {
-      Alert.alert(
-        isTurkish ? "Hata" : "Error",
-        isTurkish
-          ? "Belge kaydedilirken bir sorun oluştu."
-          : "Something went wrong while saving."
-      );
-    }
+    });
+
+    Alert.alert("Saved", "Your optimized resume was saved to My Documents.");
   };
 
   const isTurkish = language === "tr";
@@ -811,6 +807,37 @@ function JobMatchScreen({ navigation }) {
     return true;
   };
 
+  const handleSaveJobMatch = async () => {
+    if (!tailoredResume || !tailoredResume.trim()) {
+      Alert.alert("Nothing to save", "Generate a tailored resume first.");
+      return;
+    }
+
+    // Try to guess a short job title from the first line of job description
+    let jobTitle = "";
+    if (jobDescription && jobDescription.trim()) {
+      const firstLine = jobDescription.split("\n")[0].trim();
+      jobTitle =
+        firstLine.length > 50
+          ? firstLine.slice(0, 50) + "…"
+          : firstLine;
+    }
+
+    const title =
+      jobTitle && jobTitle.length > 0
+        ? `Tailored Resume – ${jobTitle}`
+        : "Tailored Resume";
+
+    await saveDocument({
+      title,
+      type: "job-match",
+      content: tailoredResume,
+    });
+
+    Alert.alert("Saved", "Your tailored resume was saved to My Documents.");
+  };
+
+
   const handleUseSample = () => {
     setResumeText(
       "Experienced Salesforce Consultant with 6+ years of hands-on experience in Sales Cloud, Service Cloud and Apex development. " +
@@ -907,42 +934,6 @@ function JobMatchScreen({ navigation }) {
       );
     } finally {
       setLoadingCoverLetter(false);
-    }
-  };
-
-  const handleSaveTailoredResume = async () => {
-    if (!tailoredResume) {
-      Alert.alert(
-        isTurkish ? "Bilgi" : "Info",
-        isTurkish
-          ? "Önce ilana göre uyarlanmış CV’yi oluştur."
-          : "Generate a tailored resume first."
-      );
-      return;
-    }
-    const doc = {
-      id: Date.now().toString() + "_tr",
-      type: "tailored_resume",
-      title: isTurkish ? "İlana Göre CV" : "Tailored Resume",
-      language,
-      createdAt: new Date().toISOString(),
-      content: tailoredResume,
-    };
-    try {
-      await addDocument(doc);
-      Alert.alert(
-        isTurkish ? "Kaydedildi" : "Saved",
-        isTurkish
-          ? "CV 'My Documents' içine kaydedildi."
-          : "Tailored resume saved to My Documents."
-      );
-    } catch (e) {
-      Alert.alert(
-        isTurkish ? "Hata" : "Error",
-        isTurkish
-          ? "Belge kaydedilirken bir sorun oluştu."
-          : "Something went wrong while saving."
-      );
     }
   };
 
@@ -1216,7 +1207,7 @@ function JobMatchScreen({ navigation }) {
                 styles.secondaryButton,
                 { marginTop: 10, borderColor: theme.border },
               ]}
-              onPress={handleSaveTailoredResume}
+              onPress={handleSaveJobMatch}
             >
               <Text
                 style={[
@@ -1793,88 +1784,169 @@ function InterviewCoachScreen({ navigation }) {
 // ---------- My Documents ----------
 function DocumentsScreen() {
   const { theme } = useContext(AppContext);
-  const [docs, setDocs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const loadDocs = useCallback(async () => {
-    setLoading(true);
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  const loadDocuments = async () => {
     try {
-      const list = await getDocuments();
-      setDocs(list);
-      if (list.length === 0) {
-        setSelectedId(null);
-      } else if (selectedId) {
-        const exists = list.find((d) => d.id === selectedId);
-        if (!exists) setSelectedId(list[0].id);
-      } else {
-        setSelectedId(list[0]?.id || null);
+      const raw = await AsyncStorage.getItem(DOCS_STORAGE_KEY);
+
+      if (!raw) {
+        // Try to migrate from an older storage key if you had one before
+        const legacy = await AsyncStorage.getItem("@resumeiq_docs");
+        if (legacy) {
+          const parsed = JSON.parse(legacy);
+          const migrated = normalizeToNewDocs(parsed);
+          setDocuments(migrated);
+          await AsyncStorage.setItem(
+            DOCS_STORAGE_KEY,
+            JSON.stringify(migrated)
+          );
+        } else {
+          setDocuments([]);
+        }
+        return;
       }
+
+      const parsed = JSON.parse(raw);
+      const normalized = normalizeToNewDocs(parsed);
+      setDocuments(normalized);
     } catch (e) {
-      console.log("Load docs error:", e);
+      console.log("loadDocuments error:", e);
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedId]);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadDocs();
-    }, [loadDocs])
-  );
-
-  const handleDelete = async (id) => {
-    Alert.alert("Delete", "Delete this document?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            const updated = await removeDocument(id);
-            setDocs(updated);
-            if (selectedId === id) {
-              setSelectedId(updated[0]?.id || null);
-            }
-          } catch (e) {
-            Alert.alert("Error", "Could not delete document.");
-          }
-        },
-      },
-    ]);
   };
 
-  const selectedDoc = docs.find((d) => d.id === selectedId) || null;
+  const normalizeToNewDocs = (arr) => {
+    if (!Array.isArray(arr)) return [];
 
-  const handleExportPdf = async () => {
-    if (!selectedDoc) {
-      Alert.alert("Info", "Select a document first.");
-      return;
-    }
-
-    try {
-      const sharingAvailable = await Sharing.isAvailableAsync();
-      if (!sharingAvailable) {
-        Alert.alert(
-          "Not supported",
-          "Sharing is not available on this device/emulator."
-        );
+    return arr.map((item) => {
+      // Old format: maybe a plain string or { id, title, content }
+      if (typeof item === "string") {
+        return {
+          id: generateId(),
+          title: "Untitled",
+          type: "resume",
+          createdAt: Date.now(),
+          content: item,
+        };
       }
+      return {
+        id: item.id || generateId(),
+        title: item.title || "Untitled",
+        type: item.type || "resume",
+        createdAt: item.createdAt || Date.now(),
+        content: item.content || "",
+      };
+    });
+  };
 
-      /*
+  const persistDocs = async (nextDocs) => {
+    setDocuments(nextDocs);
+    try {
+      await AsyncStorage.setItem(
+        DOCS_STORAGE_KEY,
+        JSON.stringify(nextDocs)
+      );
+    } catch (e) {
+      console.log("persistDocs error:", e);
+    }
+  };
+
+  const handleDelete = (docId) => {
+    const doc = documents.find((d) => d.id === docId);
+    if (!doc) return;
+
+    Alert.alert(
+      "Delete document?",
+      `Are you sure you want to delete "${doc.title}"? This cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            const next = documents.filter((d) => d.id !== docId);
+            persistDocs(next);
+          },
+        },
+      ]
+    );
+  };
+
+  const handleRename = (docId) => {
+    const doc = documents.find((d) => d.id === docId);
+    if (!doc) return;
+
+    if (Platform.OS === "ios" && Alert.prompt) {
+      Alert.prompt(
+        "Rename document",
+        "Enter a new title:",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Save",
+            onPress: (text) => {
+              const newTitle = text?.trim();
+              if (!newTitle) return;
+              const next = documents.map((d) =>
+                d.id === docId ? { ...d, title: newTitle } : d
+              );
+              persistDocs(next);
+            },
+          },
+        ],
+        "plain-text",
+        doc.title
+      );
+    } else {
+      // Simple fallback: log or later add your own modal for Android
+      Alert.alert(
+        "Rename not supported",
+        "Inline rename is currently supported only on iOS. You can implement a custom modal for Android later."
+      );
+    }
+  };
+
+  const openDocument = (doc) => {
+    setSelectedDoc(doc);
+    setModalVisible(true);
+  };
+
+  const closeDocument = () => {
+    setSelectedDoc(null);
+    setModalVisible(false);
+  };
+
+  const handleExportPDF = async (doc) => {
+    try {
       const html = `
+        <!DOCTYPE html>
         <html>
           <head>
             <meta charset="utf-8" />
+            <title>${doc.title}</title>
             <style>
               body {
                 font-family: -apple-system, system-ui, sans-serif;
                 padding: 24px;
                 color: #111827;
+                line-height: 1.5;
               }
               h1 {
-                font-size: 22px;
-                margin-bottom: 12px;
+                font-size: 24px;
+                margin-bottom: 8px;
               }
               .meta {
                 font-size: 12px;
@@ -1883,43 +1955,196 @@ function DocumentsScreen() {
               }
               pre {
                 white-space: pre-wrap;
-                font-size: 13px;
-                line-height: 1.5;
+                font-family: -apple-system, system-ui, sans-serif;
+                font-size: 14px;
               }
             </style>
           </head>
           <body>
-            <h1>${selectedDoc.title || "Document"}</h1>
+            <h1>${doc.title}</h1>
             <div class="meta">
-              ${selectedDoc.type || "document"} · ${
-        selectedDoc.language?.toUpperCase() || ""
-      } · ${formatDate(selectedDoc.createdAt)}
+              Type: ${getTypeLabel(doc.type)}<br/>
+              Created: ${formatDate(doc.createdAt)}
             </div>
-            <pre>${selectedDoc.content
+            <pre>${doc.content
               .replace(/&/g, "&amp;")
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;")}</pre>
           </body>
         </html>
       `;
-      */
-
-      const html = buildResumeHtml({
-        content: documentText,        // whatever text you're exporting
-        template: selectedTemplateId, // "classic" | "modern" | "minimal"
-        title: documentTitle,
-      });
 
       const { uri } = await Print.printToFileAsync({ html });
-
       await Sharing.shareAsync(uri, {
         mimeType: "application/pdf",
-        dialogTitle: "Share PDF",
+        dialogTitle: doc.title,
       });
     } catch (e) {
-      console.log("Export PDF error:", e);
-      Alert.alert("Error", "Could not export PDF.");
+      console.log("PDF export error:", e);
+      Alert.alert(
+        "Error",
+        "Something went wrong while exporting the PDF."
+      );
     }
+  };
+
+  const renderDocCard = (doc) => {
+    const snippet =
+      doc.content.length > 140
+        ? doc.content.slice(0, 140) + "..."
+        : doc.content;
+
+    const typeColor = getTypeColor(doc.type, theme);
+
+    return (
+      <View
+        key={doc.id}
+        style={[
+          styles.resultBox,
+          {
+            backgroundColor: theme.bgCard,
+            borderColor: theme.border,
+            marginBottom: 12,
+          },
+        ]}
+      >
+        {/* Top row: title + type badge */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 6,
+          }}
+        >
+          <Text
+            style={[
+              styles.resultTitle,
+              { color: theme.textPrimary, flex: 1, marginRight: 8 },
+            ]}
+            numberOfLines={1}
+          >
+            {doc.title}
+          </Text>
+          <View
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 3,
+              borderRadius: 999,
+              backgroundColor: typeColor + "20",
+              borderWidth: 1,
+              borderColor: typeColor + "66",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                color: typeColor,
+                fontWeight: "600",
+              }}
+            >
+              {getTypeLabel(doc.type)}
+            </Text>
+          </View>
+        </View>
+
+        <Text
+          style={{
+            fontSize: 12,
+            color: theme.textSecondary,
+            marginBottom: 6,
+          }}
+        >
+          {formatDate(doc.createdAt)}
+        </Text>
+
+        <Text
+          style={[
+            styles.resultText,
+            {
+              color: theme.textSecondary,
+              marginBottom: 10,
+            },
+          ]}
+          numberOfLines={3}
+        >
+          {snippet || "<Empty document>"}
+        </Text>
+
+        {/* Action buttons */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "flex-end",
+          }}
+        >
+          <TouchableOpacity
+            style={[
+              styles.secondaryButton,
+              {
+                borderColor: theme.border,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                marginRight: 6,
+              },
+            ]}
+            onPress={() => openDocument(doc)}
+          >
+            <Text
+              style={[
+                styles.secondaryButtonText,
+                { color: theme.textPrimary, fontSize: 12 },
+              ]}
+            >
+              Open
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.secondaryButton,
+              {
+                borderColor: theme.border,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                marginRight: 6,
+              },
+            ]}
+            onPress={() => handleRename(doc.id)}
+          >
+            <Text
+              style={[
+                styles.secondaryButtonText,
+                { color: theme.textPrimary, fontSize: 12 },
+              ]}
+            >
+              Rename
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.secondaryButton,
+              {
+                borderColor: "#ef4444",
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+              },
+            ]}
+            onPress={() => handleDelete(doc.id)}
+          >
+            <Text
+              style={[
+                styles.secondaryButtonText,
+                { color: "#ef4444", fontSize: 12 },
+              ]}
+            >
+              Delete
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   };
 
   return (
@@ -1941,114 +2166,157 @@ function DocumentsScreen() {
         <Text
           style={[
             styles.sectionSubtitle,
-            { color: theme.textSecondary },
+            { color: theme.textSecondary, marginBottom: 8 },
           ]}
         >
-          Saved resumes, tailored versions and cover letters.
+          All your saved resumes, tailored versions, cover letters and interview notes in one place.
         </Text>
 
-        {loading && (
-          <ActivityIndicator
-            style={{ marginVertical: 12 }}
-            color={theme.textPrimary}
-          />
-        )}
-
-        {docs.length === 0 && !loading ? (
-          <Text
-            style={[
-              styles.sectionSubtitle,
-              { marginTop: 12, color: theme.textSecondary },
-            ]}
+        {loading ? (
+          <ActivityIndicator color={theme.textPrimary} />
+        ) : documents.length === 0 ? (
+          <View
+            style={{
+              marginTop: 32,
+              alignItems: "center",
+            }}
           >
-            You don't have any saved documents yet. Generate an optimized
-            resume or cover letter and save it here.
-          </Text>
-        ) : null}
-
-        {docs.map((doc) => {
-          const isActive = doc.id === selectedId;
-          return (
-            <View
-              key={doc.id}
-              style={[
-                styles.docItem,
-                {
-                  borderColor: isActive ? theme.accent : theme.border,
-                  backgroundColor: theme.bgCard,
-                },
-              ]}
+            <Text
+              style={{
+                color: theme.textSecondary,
+                textAlign: "center",
+                marginBottom: 8,
+              }}
             >
-              <TouchableOpacity
-                style={styles.docItemHeader}
-                onPress={() => setSelectedId(doc.id)}
+              No documents yet.
+            </Text>
+            <Text
+              style={{
+                color: theme.textSecondary,
+                fontSize: 12,
+                textAlign: "center",
+              }}
+            >
+              Save your optimized resumes, job matches or cover letters from other screens to see them here.
+            </Text>
+          </View>
+        ) : (
+          <View style={{ marginTop: 12 }}>
+            {documents
+              .slice()
+              .sort((a, b) => b.createdAt - a.createdAt)
+              .map(renderDocCard)}
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Detail modal */}
+      <Modal
+        visible={modalVisible && !!selectedDoc}
+        animationType="slide"
+        onRequestClose={closeDocument}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: theme.bg,
+            paddingTop: 48,
+            paddingHorizontal: 16,
+          }}
+        >
+          {selectedDoc && (
+            <>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                }}
               >
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, marginRight: 8 }}>
                   <Text
-                    style={[
-                      styles.docTitle,
-                      { color: theme.textPrimary },
-                    ]}
-                    numberOfLines={1}
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "600",
+                      color: theme.textPrimary,
+                    }}
+                    numberOfLines={2}
                   >
-                    {doc.title}
+                    {selectedDoc.title}
                   </Text>
                   <Text
-                    style={[
-                      styles.docMeta,
-                      { color: theme.textSecondary },
-                    ]}
-                    numberOfLines={1}
+                    style={{
+                      fontSize: 12,
+                      color: theme.textSecondary,
+                      marginTop: 4,
+                    }}
                   >
-                    {doc.type} · {doc.language?.toUpperCase()} ·{" "}
-                    {formatDate(doc.createdAt)}
+                    {getTypeLabel(selectedDoc.type)} ·{" "}
+                    {formatDate(selectedDoc.createdAt)}
                   </Text>
                 </View>
 
                 <TouchableOpacity
-                  onPress={() => handleDelete(doc.id)}
-                  style={styles.docDeleteButton}
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    marginRight: 8,
+                  }}
+                  onPress={() => handleExportPDF(selectedDoc)}
                 >
-                  <Text style={styles.docDeleteText}>✕</Text>
-                </TouchableOpacity>
-              </TouchableOpacity>
-
-              {isActive ? (
-                <View style={styles.docContentBox}>
                   <Text
-                    style={[
-                      styles.resultText,
-                      { color: theme.textSecondary },
-                    ]}
+                    style={{
+                      fontSize: 12,
+                      color: theme.textPrimary,
+                    }}
                   >
-                    {doc.content}
+                    Export PDF
                   </Text>
+                </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[
-                      styles.secondaryButton,
-                      {
-                        marginTop: 10,
-                        borderColor: theme.border,
-                      },
-                    ]}
-                    onPress={handleExportPdf}
+                <TouchableOpacity
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                  }}
+                  onPress={closeDocument}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: theme.textPrimary,
+                    }}
                   >
-                    <Text
-                      style={[
-                        styles.secondaryButtonText,
-                        { color: theme.textPrimary },
-                      ]}
-                    >
-                      Export as PDF
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : null}
-            </View>
-          );
-        })}
-      </ScrollView>
+                    Close
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 40 }}
+              >
+                <Text
+                  style={{
+                    color: theme.textPrimary,
+                    fontSize: 14,
+                    lineHeight: 20,
+                  }}
+                >
+                  {selectedDoc.content || "<Empty document>"}
+                </Text>
+              </ScrollView>
+            </>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
