@@ -185,18 +185,30 @@ export default function JobMatchScreen({ navigation }) {
           {isTurkish ? "Mevcut CV Metnin" : "Your Resume Text"}
         </Text>
 
-        <TextInput value={resumeText} onChangeText={setResumeText}
-          placeholder={ isTurkish ? "CV’ni buraya yapıştır..." : "Paste your resume here..." } placeholderTextColor="#6b7280"
-          style={[ styles.textArea, { backgroundColor: theme.bg, borderColor: theme.border, color: theme.textPrimary, }, ]} multiline={true} textAlignVertical="top" />
+        <View style={{ position: "relative" }}>
+          <TextInput value={resumeText} onChangeText={setResumeText}
+            placeholder={ isTurkish ? "CV’ni buraya yapıştır..." : "Paste your resume here..." } placeholderTextColor="#6b7280"
+            style={[ styles.textArea, { backgroundColor: theme.bg, borderColor: theme.border, color: theme.textPrimary, paddingBottom: 25, paddingRight: 40,}, ]} multiline={true} maxLength={20000} textAlignVertical="top" />
+
+          <Text style={{ position: "absolute", right: 10,  bottom: 20, color: "#9ca3af", fontSize: 12, }}>
+            {resumeText.length} / 20000
+          </Text>
+        </View>
 
         {/* Job description */}
         <Text style={[ styles.inputLabel, { color: theme.textPrimary }, ]} >
           {isTurkish ? "İş İlanı / Pozisyon Açıklaması" : "Job Description"}
         </Text>
 
-        <TextInput value={jobDescription} onChangeText={setJobDescription}
-          placeholder={ isTurkish ? "İş ilanı metnini buraya yapıştır..." : "Paste the job description here..." } placeholderTextColor="#6b7280"
-          style={[ styles.textArea, { backgroundColor: theme.bg, borderColor: theme.border, color: theme.textPrimary, }, ]} multiline={true} textAlignVertical="top" />
+        <View style={{ position: "relative" }}>
+          <TextInput value={jobDescription} onChangeText={setJobDescription}
+            placeholder={ isTurkish ? "İş ilanı metnini buraya yapıştır..." : "Paste the job description here..." } placeholderTextColor="#6b7280"
+            style={[ styles.textArea, { backgroundColor: theme.bg, borderColor: theme.border, color: theme.textPrimary, paddingBottom: 25, paddingRight: 40, }, ]} multiline={true} maxLength={20000} textAlignVertical="top" />
+            
+          <Text style={{ position: "absolute", right: 10,  bottom: 20, color: "#9ca3af", fontSize: 12, }}>
+            {jobDescription.length} / 20000
+          </Text>
+        </View>
 
         {/* Sample + Buttons */}
         <View style={styles.buttonRow}>

@@ -93,6 +93,18 @@ router.post("/job-match-resume", async (req, res) => {
       .json({ error: "resumeText and jobDescription are required" });
   }
 
+  if (resumeText.length > 20000) {
+    return res.status(400).json({
+      error: "Resume is too long. Maximum allowed is 20,000 characters."
+    });
+  }
+
+  if (jobDescription.length > 20000) {
+    return res.status(400).json({
+      error: "Job Description is too long. Maximum allowed is 20,000 characters."
+    });
+  }
+
   const isTurkish = language === "tr";
 
   if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
