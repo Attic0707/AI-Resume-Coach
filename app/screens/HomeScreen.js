@@ -52,7 +52,7 @@ export default function HomeScreen({ navigation }) {
         <FeatureCard title="Interview Coach" description="Practice questions and get instant feedback." emoji="🎤" onPress={() => navigation.navigate("InterviewCoach")} />
 
         <ProOnlyFeatureTile title="Salary Benchmarks" subtitle="Coming soon: Pro-only salary insights for your target role." onPress={() => navigation.navigate("Upgrade")} />
-        <ProOnlyFeatureTile title="Advanced Templates" subtitle="Export ATS-ready resumes with different layouts and tones." onPress={() => navigation.navigate("AdvancedTemplates")}/> {/* future screen */} 
+        <ProOnlyFeatureTile title="Advanced Templates" subtitle="Export ATS-ready resumes with different layouts and tones." onPress={() => navigation.navigate("AdvancedTemplates")}/> 
 
         <FeatureCard title="My Documents" description="View, edit and export saved resumes & letters." emoji="📁" onPress={() => navigation.navigate("Documents")} />
         <FeatureCard title="Upgrade & Theme" description="Manage plan and switch light/dark mode." emoji="⭐" onPress={() => navigation.navigate("Upgrade")} />
