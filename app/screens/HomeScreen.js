@@ -40,6 +40,7 @@ export default function HomeScreen({ navigation }) {
         <FeatureCard title="Match to Job Description" description="Tailor your resume & cover letter for a specific role." icon={matchIcon} onPress={() => navigation.navigate("JobMatch")} />
         <FeatureCard title="Interview Coach" description="Practice questions and get instant feedback." icon={coachIcon} onPress={() => navigation.navigate("InterviewCoach")} />
         <FeatureCard title="Bullet Rewriter" description="Turn existing bullet points into stronger, more professional lines." icon={coachIcon} onPress={() => navigation.navigate("BulletRewriter")} />
+        <FeatureCard title="Job Analyzer" description="Analyze the job description" icon={coachIcon} onPress={() => navigation.navigate("JobAnalyzer")} />
 
         <ProOnlyFeatureTile title="Salary Benchmarks" subtitle="Pro-only salary insights for your target role. – tap to upgrade." icon={salaryIcon} onPress={() => navigation.navigate("Upgrade")} />
         <ProOnlyFeatureTile title="Advanced Templates" subtitle="Export ATS-ready resumes with different layouts and tones. – tap to upgrade." icon={advancedIcon} onPress={() => navigation.navigate("AdvancedTemplates")}/> 

@@ -72,6 +72,13 @@ export async function generateCoverLetter({
   });
 }
 
+export async function analyzeJobDescription({ jobDescription, resumeText, language }) {
+  return request("/analyze-job", {
+    method: "POST",
+    body: { jobDescription, resumeText, language },
+  });
+}
+
 export async function getInterviewFeedback({ question, answer, language }) {
   return request("/interview-feedback", {
     method: "POST",
@@ -85,7 +92,6 @@ export async function getInterviewQuestions({ role, level, mode, language }) {
     body: { role, level, mode, language },
   });
 }
-
 
 export async function rewriteBullet({ bulletText, targetRole, language, tone }) {
   return request("/bullet-rewrite", {

@@ -1,7 +1,7 @@
 // backend/src/routes/resumeRoutes.js
 const express = require("express");
 const OpenAI = require("openai");
-const { simpleLocalOptimize, simpleJobMatchLocal, simpleCoverLetterLocal, } = require("../utils/fallbacks");
+const { simpleLocalOptimize, simpleJobMatchLocal, simpleCoverLetterLocal, simpleJobAnalysisLocal } = require("../utils/fallbacks");
 const router = express.Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, });
 
@@ -226,6 +226,138 @@ router.post("/cover-letter", async (req, res) => {
     }
 
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+// /analyze-job
+router.post("/analyze-job", async (req, res) => {
+  const { jobDescription, resumeText = "", language = "en" } = req.body || {};
+
+  if (!jobDescription || typeof jobDescription !== "string") {
+    return res
+      .status(400)
+      .json({ error: "jobDescription (string) is required" });
+  }
+
+  if (jobDescription.length > 20000) {
+    return res.status(400).json({
+      error: "Job Description is too long. Maximum allowed is 20,000 characters.",
+    });
+  }
+
+  if (resumeText && resumeText.length > 20000) {
+    return res.status(400).json({
+      error: "Resume is too long. Maximum allowed is 20,000 characters.",
+    });
+  }
+
+  const isTurkish = language === "tr";
+
+  // Local mock / no API key
+  if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
+    const analysis = simpleJobAnalysisLocal(jobDescription, resumeText, language);
+    return res.json({ ...analysis, source: "local-mock" });
+  }
+
+  try {
+    const systemPrompt = isTurkish
+      ? "Sen deneyimli bir İK uzmanı ve kariyer koçusun. Görevin, iş ilanlarını analiz ederek rolün seviyesini, temel gereksinimleri, teknik ve davranışsal yetkinlikleri çıkarmaktır. Eğer adayın CV metni verilmişse, ilanın adayla ne kadar uyumlu olduğunu da yorumlarsın."
+      : "You are an experienced recruiter and career coach. Your job is to analyze job descriptions to extract role level, key requirements, technical and soft skills. If a candidate resume is provided, you also comment on alignment between the resume and the job.";
+
+    const schema = {
+      roleTitle: "string",
+      jobSummary: "string",
+      seniority:
+        'string (one of: "junior", "mid", "senior", "lead", "manager", "director", "executive", "unspecified")',
+      hardSkills: "string[]",
+      softSkills: "string[]",
+      tools: "string[]",
+      keywords: "string[]",
+      redFlags: "string[]",
+      recommendedResumeTweaks: "string[]",
+      matchSummary:
+        "string (short paragraph about how well the resume matches the job; empty if no resumeText)",
+    };
+
+    const userPrompt = `
+      Job description:
+      ${jobDescription}
+
+      Candidate resume (optional):
+      ${resumeText || "(not provided)"}
+
+      Return a JSON object ONLY (no backticks, no extra text) with the following shape:
+
+      ${JSON.stringify(schema, null, 2)}
+
+      Rules:
+      - Keep values short and focused.
+      - "roleTitle": the main role from the ad (e.g., "Senior Salesforce Developer").
+      - "seniority": best guess based on the ad.
+      - "hardSkills": concrete technical abilities, domain knowledge.
+      - "softSkills": communication, leadership, teamwork, etc.
+      - "tools": platforms, frameworks, tools, technologies.
+      - "keywords": important phrases that should appear in a resume.
+      - "redFlags": potential concerns (e.g., very vague responsibilities, unrealistic expectations).
+      - "recommendedResumeTweaks": short action tips for improving the resume for this job.
+      - "matchSummary": if resume is provided, summarize alignment in 2–4 sentences; otherwise empty string.
+      `;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.3,
+      max_tokens: 700,
+    });
+
+    let raw = completion.choices?.[0]?.message?.content?.trim() || "";
+
+    // Try to parse JSON; if the model added extra text, slice between first { and last }
+    const firstBrace = raw.indexOf("{");
+    const lastBrace = raw.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      raw = raw.slice(firstBrace, lastBrace + 1);
+    }
+
+    let analysis;
+    try {
+      analysis = JSON.parse(raw);
+    } catch (parseErr) {
+      console.error("JSON parse error in /analyze-job:", parseErr);
+      analysis = simpleJobAnalysisLocal(jobDescription, resumeText, language);
+      return res.json({ ...analysis, source: "local-fallback-json" });
+    }
+
+    // Basic sanity: ensure required fields exist, otherwise fallback
+    if (
+      !analysis ||
+      typeof analysis !== "object" ||
+      !analysis.jobSummary ||
+      !analysis.roleTitle
+    ) {
+      const fallback = simpleJobAnalysisLocal(jobDescription, resumeText, language);
+      return res.json({ ...fallback, source: "local-fallback-shape" });
+    }
+
+    return res.json({ ...analysis, source: "openai" });
+  } catch (err) {
+    console.error("Error in /analyze-job:", err);
+
+    if (err?.code === "insufficient_quota" || err?.status === 429) {
+      const analysis = simpleJobAnalysisLocal(jobDescription, resumeText, language);
+      return res.status(200).json({
+        ...analysis,
+        source: "local-fallback",
+        warning: isTurkish
+          ? "OpenAI kotası doldu, local mock kullanılıyor."
+          : "OpenAI quota exceeded, using local fallback.",
+      });
+    }
+
+    return res.status(500).json({ error: "Server error" });
   }
 });
 

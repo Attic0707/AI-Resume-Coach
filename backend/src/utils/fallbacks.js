@@ -214,6 +214,47 @@ function simpleBulletRewriteLocal(bulletText, targetRole, language = "en") {
   ];
 }
 
+function simpleJobAnalysisLocal(jobDescription, resumeText = "", language = "en") {
+  const isTurkish = language === "tr";
+  const jd = jobDescription || "";
+  const jdShort = jd.length > 400 ? jd.slice(0, 400) + "..." : jd;
+
+  const firstLine = jd.split("\n")[0] || "";
+  const roleTitleGuess =
+    firstLine.length > 0 && firstLine.length < 80
+      ? firstLine.trim()
+      : isTurkish
+      ? "Rol başlığı (tahmini)"
+      : "Role title (approximate)";
+
+  return {
+    roleTitle: roleTitleGuess,
+    jobSummary: isTurkish ? `İlan özeti (local mock): ${jdShort}` : `Job summary (local mock): ${jdShort}`,
+    seniority: "unspecified",
+    hardSkills: [],
+    softSkills: [],
+    tools: [],
+    keywords: [],
+    redFlags: [],
+    recommendedResumeTweaks: isTurkish
+      ? [
+          "CV'nde ilandaki anahtar kelimeleri net olarak belirt.",
+          "Deneyimlerini ilandaki sorumluluklarla eşleştir.",
+          "Ölçülebilir sonuçlar ekle (ör: %20 artış, 3x hızlanma).",
+        ]
+      : [
+          "Make sure your resume uses the key phrases from this job ad.",
+          "Align your responsibilities with those listed in the posting.",
+          "Add measurable results (e.g., 20% increase, 3x faster, etc.).",
+        ],
+    matchSummary: resumeText
+      ? isTurkish
+        ? "CV ile temel uyum kontrol edildi (local mock). Detaylı analiz için tam AI modeli gerekir."
+        : "Basic alignment between resume and job checked (local mock). Detailed matching requires the full AI model."
+      : "",
+  };
+}
+
 module.exports = {
   simpleLocalOptimize,
   simpleJobMatchLocal,
@@ -221,4 +262,5 @@ module.exports = {
   simpleInterviewFeedbackLocal,
   simpleInterviewQuestionsLocal,
   simpleBulletRewriteLocal,
+  simpleJobAnalysisLocal,
 };

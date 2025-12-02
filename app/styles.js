@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
+    marginRight: 20
   },
   iconImage: {
     width: "100%",
