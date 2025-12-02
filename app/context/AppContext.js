@@ -1,6 +1,6 @@
 // app/context/AppContext.js
 import React, { createContext, useMemo, useState, useContext, } from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
+import { View, Text, TouchableOpacity, Image, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import styles from "../styles";
@@ -47,6 +47,14 @@ export function AppProvider({ children }) {
     setFreeCreditsLeft((prev) => Math.max(0, prev - 1));
   };
 
+  const canUseFeature = () => {
+    if (isPro) return true;
+    if (freeCreditsLeft > 0) return true;
+
+    Alert.alert( "Upgrade required", "You’ve used all free AI credits. Upgrade to ResumeIQ Pro to continue." );
+    return false;
+  };
+
   const value = useMemo(
     () => ({
       theme,
@@ -56,6 +64,7 @@ export function AppProvider({ children }) {
       upgradeToPro,
       freeCreditsLeft,
       consumeCredit,
+      canUseFeature
     }),
     [theme, themeName, isPro, freeCreditsLeft]
   );
@@ -228,4 +237,8 @@ export function FeatureCard({ title, description, icon, onPress }) {
       </View>
     </TouchableOpacity>
   );
+}
+
+export function useAppContext() {
+  return useContext(AppContext);
 }

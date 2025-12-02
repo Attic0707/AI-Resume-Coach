@@ -23,12 +23,6 @@ export default function WelcomeScreen({ navigation }) {
 
   return (
     <ImageBackground source={image} style={styles.background} resizeMode="cover" >
-      {/* <View style={[ styles.welcomeContainer, {  backgroundColor: "transparent" }, ]} > */}
-        {/* 
-        <Text style={[ styles.appTitle, { color: theme.textPrimary }, ]} > Resume IQ </Text> 
-        <Text style={[ styles.appSubtitle, { color: theme.textSecondary }, ]}  > Optimize your CV, match job descriptions and practice interviews with AI. </Text>
-        */}
-
         <View style={styles.centerWrapper}>
           <TouchableOpacity style={[ styles.circleButton, {backgroundColor: theme.accent},] } onPress={() => navigation.replace("Home")} >
             <Animated.View pointerEvents="none" style={[ styles.shineOverlay, { transform: [ { translateX: shineTranslateX }, { rotate: "25deg" }, ], }, ]} />
@@ -37,7 +31,6 @@ export default function WelcomeScreen({ navigation }) {
             </Text>
           </TouchableOpacity>
         </View>
-      {/* </View> */}
     </ImageBackground>
   );
 }

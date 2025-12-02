@@ -5,6 +5,7 @@ require("dotenv").config();
 
 const resumeRoutes = require("./routes/resumeRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
+const rewriteRoutes = require("./routes/rewriteRoutes");
 
 const app = express();
 
@@ -19,5 +20,6 @@ app.get("/", (req, res) => {
 // Route groups
 app.use("/", resumeRoutes);
 app.use("/", interviewRoutes);
+app.use("/", rewriteRoutes);
 
 module.exports = app;

@@ -21,7 +21,7 @@ router.post("/optimize-resume", async (req, res) => {
     });
   }
 
-  if (targetRole.length > 100) {
+  if (targetRole && targetRole.length > 100) {
     return res.status(400).json({
       error: "Target Role is too long. Maximum allowed is 100 characters."
     });

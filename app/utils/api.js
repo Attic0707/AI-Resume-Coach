@@ -85,3 +85,11 @@ export async function getInterviewQuestions({ role, level, mode, language }) {
     body: { role, level, mode, language },
   });
 }
+
+
+export async function rewriteBullet({ bulletText, targetRole, language, tone }) {
+  return request("/bullet-rewrite", {
+    method: "POST",
+    body: { bulletText, targetRole, language, tone }
+  });
+}

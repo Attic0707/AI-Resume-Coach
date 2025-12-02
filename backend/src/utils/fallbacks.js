@@ -199,10 +199,26 @@ function simpleInterviewQuestionsLocal(role, level, mode, language) {
   return all.slice(0, desiredCount);
 }
 
+function simpleBulletRewriteLocal(bulletText, targetRole, language = "en") {
+  const isTurkish = language === "tr";
+  const base = bulletText || "";
+
+  const prefix = isTurkish
+    ? "• Geliştirilmiş: "
+    : "• Improved: ";
+
+  return [
+    `${prefix}${base}`,
+    `${prefix}${base} (v2)`,
+    `${prefix}${base} (v3)`,
+  ];
+}
+
 module.exports = {
   simpleLocalOptimize,
   simpleJobMatchLocal,
   simpleCoverLetterLocal,
   simpleInterviewFeedbackLocal,
   simpleInterviewQuestionsLocal,
+  simpleBulletRewriteLocal,
 };
