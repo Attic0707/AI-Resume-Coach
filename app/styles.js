@@ -220,8 +220,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 14,
     marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
+
   },
   resultTitle: {
     fontSize: 15,

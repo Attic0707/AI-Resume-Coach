@@ -193,7 +193,7 @@ export function ProOnlyFeatureTile({ title, subtitle, icon, onPress }) {
   };
 
   return (
-    <TouchableOpacity activeOpacity={0.8} style={[ styles.resultBox, { backgroundColor: theme.bgCard, borderColor: theme.border, opacity: locked ? 0.7 : 1, }, ]} onPress={handlePress} >
+    <TouchableOpacity activeOpacity={0.8} style={[ styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border, opacity: locked ? 0.7 : 1, }, ]} onPress={handlePress} >
       <View style={styles.iconWrapper}>
         <Image source={icon} style={styles.iconImage} resizeMode="contain" />
       </View>
