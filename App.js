@@ -13,6 +13,7 @@ import JobMatchScreen from "./app/screens/JobMatchScreen";
 import InterviewCoachScreen from "./app/screens/InterviewCoachScreen";
 import BulletRewriterScreen from "./app/screens/BulletRewriterScreen";
 import JobAnalyzerScreen from "./app/screens/JobAnalyzerScreen";
+import LinkedInOptimizerScreen from "./app/screens/LinkedInOptimizerScreen";
 import MyDocumentsScreen from "./app/screens/MyDocumentsScreen";
 import UpgradeScreen from "./app/screens/UpgradeScreen";
 
@@ -37,6 +38,7 @@ export default function App() {
           <Stack.Screen name="InterviewCoach" component={InterviewCoachScreen} options={{ title: "Interview Coach" }}/>
           <Stack.Screen name="BulletRewriter" component={BulletRewriterScreen} options={{ title: "Bullet Rewriter" }}/>
           <Stack.Screen name="JobAnalyzer" component={JobAnalyzerScreen} options={{ title: "Job Analyzer" }}/>
+          <Stack.Screen name="LinkedInOptimizer" component={LinkedInOptimizerScreen} options={{ title: "LinkedIn Optimizer" }}/>
           <Stack.Screen name="Documents" component={MyDocumentsScreen} options={{ title: "My Documents" }}/>
           <Stack.Screen name="Upgrade" component={UpgradeScreen} options={{ title: "Upgrade & Theme" }}/>
         </Stack.Navigator>

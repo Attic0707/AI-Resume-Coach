@@ -99,3 +99,9 @@ export async function rewriteBullet({ bulletText, targetRole, language, tone }) 
     body: { bulletText, targetRole, language, tone }
   });
 }
+
+export async function optimizeLinkedInSection({ linkedInText, sectionType, targetRole, language,}) {
+  return request("/optimize-linkedin", {
+    method: "POST",
+    body: { linkedInText, sectionType, targetRole, language, }, });
+}

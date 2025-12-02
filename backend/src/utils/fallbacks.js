@@ -255,6 +255,66 @@ function simpleJobAnalysisLocal(jobDescription, resumeText = "", language = "en"
   };
 }
 
+function simpleLinkedInOptimizeLocal(linkedInText, sectionType = "about", targetRole = "", language = "en") {
+  const isTurkish = language === "tr";
+  const base = linkedInText || "";
+
+  const header = isTurkish
+    ? "LinkedIn bölümü (local mock ile hafifçe iyileştirilmiş):\n\n"
+    : "LinkedIn section (lightly improved via local mock):\n\n";
+
+  const hintLines = [];
+
+  if (sectionType === "about") {
+    hintLines.push(
+      isTurkish
+        ? "• Açılış cümleni daha net ve güçlü yap (kim olduğunu 1–2 cümlede özetle)."
+        : "• Make your opening line clearer and stronger (who you are in 1–2 sentences)."
+    );
+    hintLines.push(
+      isTurkish
+        ? "• Somut sonuçlar ve metrikler ekle (ör: %X artış, Y ülke, Z proje)."
+        : "• Add concrete results and metrics (e.g., %X increase, Y markets, Z projects)."
+    );
+  } else {
+    hintLines.push(
+      isTurkish
+        ? "• Görev listesinden çok, başarı odaklı cümleler kullan."
+        : "• Focus less on duties and more on achievements."
+    );
+    hintLines.push(
+      isTurkish
+        ? "• Her maddeyi güçlü bir fiille başlat."
+        : "• Start each bullet with a strong action verb."
+    );
+  }
+
+  if (targetRole) {
+    hintLines.push(
+      isTurkish
+        ? `• Metni "${targetRole}" rolüne daha fazla hizalayacak anahtar kelimeler ekle.`
+        : `• Weave in keywords that support the "${targetRole}" target role.`
+    );
+  }
+
+  const hints = hintLines.length
+    ? (isTurkish ? "\n\nNotlar:\n" : "\n\nNotes:\n") +
+      hintLines.map((l) => "• " + l).join("\n")
+    : "";
+
+  // Very naive text tweak
+  const improved = base
+    .replace(/\bexperienced\b/gi, isTurkish ? "deneyimli" : "experienced professional")
+    .replace(/\bresponsible for\b/gi, isTurkish ? "sorumluluk aldım" : "led")
+    .concat(
+      isTurkish
+        ? "\n\n• Mümkün olduğunda sayılar ve sonuçlar ekleyerek cümlelerini güçlendir."
+        : "\n\n• Whenever possible, strengthen sentences by adding numbers and concrete outcomes."
+    );
+
+  return header + improved + hints;
+}
+
 module.exports = {
   simpleLocalOptimize,
   simpleJobMatchLocal,
@@ -263,4 +323,5 @@ module.exports = {
   simpleInterviewQuestionsLocal,
   simpleBulletRewriteLocal,
   simpleJobAnalysisLocal,
+  simpleLinkedInOptimizeLocal,
 };

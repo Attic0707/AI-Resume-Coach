@@ -1,7 +1,7 @@
 // backend/src/routes/resumeRoutes.js
 const express = require("express");
 const OpenAI = require("openai");
-const { simpleLocalOptimize, simpleJobMatchLocal, simpleCoverLetterLocal, simpleJobAnalysisLocal } = require("../utils/fallbacks");
+const { simpleLocalOptimize, simpleJobMatchLocal, simpleCoverLetterLocal, simpleJobAnalysisLocal, simpleLinkedInOptimizeLocal } = require("../utils/fallbacks");
 const router = express.Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, });
 
@@ -350,6 +350,119 @@ router.post("/analyze-job", async (req, res) => {
       const analysis = simpleJobAnalysisLocal(jobDescription, resumeText, language);
       return res.status(200).json({
         ...analysis,
+        source: "local-fallback",
+        warning: isTurkish
+          ? "OpenAI kotası doldu, local mock kullanılıyor."
+          : "OpenAI quota exceeded, using local fallback.",
+      });
+    }
+
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// /optimize-linkedin
+router.post("/optimize-linkedin", async (req, res) => {
+  const {
+    linkedInText,
+    sectionType = "about", // "about" | "experience"
+    targetRole = "",
+    language = "en",
+  } = req.body || {};
+
+  if (!linkedInText || typeof linkedInText !== "string") {
+    return res
+      .status(400)
+      .json({ error: "linkedInText (string) is required" });
+  }
+
+  if (linkedInText.length > 8000) {
+    return res.status(400).json({
+      error: "LinkedIn text is too long. Maximum allowed is 8,000 characters.",
+    });
+  }
+
+  if (targetRole && targetRole.length > 120) {
+    return res.status(400).json({
+      error: "Target role is too long. Maximum allowed is 120 characters.",
+    });
+  }
+
+  const isTurkish = language === "tr";
+
+  // Local mock / no API key
+  if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
+    const optimized = simpleLinkedInOptimizeLocal(
+      linkedInText,
+      sectionType,
+      targetRole,
+      language
+    );
+    return res.json({
+      optimizedText: optimized,
+      source: "local-mock",
+    });
+  }
+
+  try {
+    const systemPrompt = isTurkish
+      ? "Sen LinkedIn profilleri konusunda uzman bir kariyer ve CV koçusun. Görevin, kullanıcının LinkedIn 'Hakkımda' veya Deneyim açıklamasını daha etkileyici, ölçülebilir ve hedef role uygun hale getirmek."
+      : "You are an expert LinkedIn and career coach. Your job is to rewrite the user's LinkedIn 'About' or Experience section to be more compelling, measurable, and aligned with the target role.";
+
+    const sectionLabel = sectionType === "experience"
+      ? (isTurkish ? "Deneyim açıklaması" : "Experience entry")
+      : (isTurkish ? "Hakkımda bölümü" : "About section");
+
+    const userPrompt = `
+      Section type: ${sectionType}
+
+      Original ${sectionLabel}:
+      ${linkedInText}
+
+      Target role (optional):
+      ${targetRole || (isTurkish ? "Belirtilmedi" : "Not specified")}
+
+      Instructions:
+      - Keep it truthful. Do NOT invent degrees, companies, or achievements that are clearly not implied.
+      - Strengthen the hook in the first 1–2 sentences to make it stand out.
+      - Use clear, natural language (no obvious AI tone, no disclaimers).
+      - Add measurable achievements and concrete outcomes when reasonably inferable.
+      - Make it skimmable: short paragraphs or bullet-like lines.
+      - Naturally weave in relevant keywords for the target role without keyword-stuffing.
+      - Preserve the user's voice as much as possible (don't make it sound like a completely different person).
+      - Output ONLY the improved LinkedIn text, no explanations or comments.
+      `;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.5,
+      max_tokens: 800,
+    });
+
+    const optimizedText =
+      completion.choices?.[0]?.message?.content?.trim() ||
+      simpleLinkedInOptimizeLocal(linkedInText, sectionType, targetRole, language);
+
+    return res.json({
+      optimizedText,
+      source: "openai",
+    });
+  } catch (err) {
+    console.error("Error in /optimize-linkedin:", err);
+
+    if (err?.code === "insufficient_quota" || err?.status === 429) {
+      const optimized = simpleLinkedInOptimizeLocal(
+        linkedInText,
+        sectionType,
+        targetRole,
+        language
+      );
+      return res.status(200).json({
+        optimizedText: optimized,
         source: "local-fallback",
         warning: isTurkish
           ? "OpenAI kotası doldu, local mock kullanılıyor."
