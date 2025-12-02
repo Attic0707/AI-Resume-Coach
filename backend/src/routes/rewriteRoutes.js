@@ -8,6 +8,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // /bullet-rewrite
 router.post("/bullet-rewrite", async (req, res) => {
+    console.log('check : ', bulletText);
   const { bulletText, targetRole = "", language = "en", tone = "impact" } = req.body || {};
 
   if (!bulletText || typeof bulletText !== "string") {
