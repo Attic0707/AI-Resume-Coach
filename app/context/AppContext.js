@@ -179,7 +179,7 @@ export function UsageBanner({ style }) {
   );
 }
 
-export function ProOnlyFeatureTile({ title, subtitle, onPress }) {
+export function ProOnlyFeatureTile({ title, subtitle, icon, onPress }) {
   const { isPro, theme } = useContext(AppContext);
   const navigation = useNavigation();
   const locked = !isPro;
@@ -194,22 +194,18 @@ export function ProOnlyFeatureTile({ title, subtitle, onPress }) {
 
   return (
     <TouchableOpacity activeOpacity={0.8} style={[ styles.resultBox, { backgroundColor: theme.bgCard, borderColor: theme.border, opacity: locked ? 0.7 : 1, }, ]} onPress={handlePress} >
-      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4, }} >
-        <Text style={[ styles.resultTitle, { color: theme.textPrimary }, ]} >
-          {title}
-        </Text>
-        {locked && <LockIcon color={theme.textSecondary} />}
+      <View style={styles.iconWrapper}>
+        <Image source={icon} style={styles.iconImage} resizeMode="contain" />
       </View>
 
-      <Text style={[ styles.resultText, { color: theme.textSecondary }, ]} >
-        {subtitle}
-      </Text>
-
-      {locked && (
-        <Text style={{ marginTop: 8, fontSize: 12, color: theme.textSecondary, }} >
-          Pro only feature – tap to upgrade.
+      <View style={styles.cardTextWrapper}>
+        <Text style={[ styles.cardTitle, { color: theme.textPrimary }, ]} >
+          {locked && <LockIcon color={theme.textSecondary}/> }  {title}
         </Text>
-      )}
+        <Text style={[ styles.cardDescription, { color: theme.textSecondary }, ]} >
+          {subtitle}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }

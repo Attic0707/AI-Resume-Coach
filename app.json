@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "buildNumber": "1",
-      "bundleIdentifier": "com.anonymous.resumeIq",
+      "bundleIdentifier": "com.sametatiik7.resumeIq",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
