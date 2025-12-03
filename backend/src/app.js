@@ -10,6 +10,7 @@ const rewriteRoutes = require("./routes/rewriteRoutes");
 
 const app = express();
 
+app.set("trust proxy", 1); // or true
 app.use(cors());
 app.use(express.json());
 
@@ -17,6 +18,8 @@ app.use(express.json());
 const aiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 30,             // 30 AI calls per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
 // Apply limiter *before* the routes
