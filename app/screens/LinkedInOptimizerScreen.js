@@ -166,6 +166,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     paddingBottom: 32,
+    flex: 1
   },
   title: {
     fontSize: 22,
