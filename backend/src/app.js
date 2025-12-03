@@ -22,4 +22,17 @@ app.use("/", resumeRoutes);
 app.use("/", interviewRoutes);
 app.use("/", rewriteRoutes);
 
+import rateLimit from "express-rate-limit";
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,             // 30 AI calls per minute per IP
+});
+
+app.use("/optimize-resume", aiLimiter);
+app.use("/job-match-resume", aiLimiter);
+app.use("/cover-letter", aiLimiter);
+app.use("/interview-feedback", aiLimiter);
+app.use("/interview-questions", aiLimiter);
+
 module.exports = app;
