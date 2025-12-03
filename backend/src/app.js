@@ -2,6 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+const rateLimit = require("express-rate-limit");
 
 const resumeRoutes = require("./routes/resumeRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
@@ -12,6 +13,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ----- Rate limiting for AI endpoints -----
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,             // 30 AI calls per minute per IP
+});
+
+// Apply limiter *before* the routes
+app.use("/optimize-resume", aiLimiter);
+app.use("/job-match-resume", aiLimiter);
+app.use("/cover-letter", aiLimiter);
+app.use("/interview-feedback", aiLimiter);
+app.use("/interview-questions", aiLimiter);
+app.use("/bullet-rewrite", aiLimiter);
+app.use("/analyze-job", aiLimiter);
+app.use("/optimize-linkedin", aiLimiter);
+
 // Health check
 app.get("/", (req, res) => {
   res.json({ status: "ok", message: "AI Resume Coach backend running" });
@@ -21,18 +38,5 @@ app.get("/", (req, res) => {
 app.use("/", resumeRoutes);
 app.use("/", interviewRoutes);
 app.use("/", rewriteRoutes);
-
-import rateLimit from "express-rate-limit";
-
-const aiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30,             // 30 AI calls per minute per IP
-});
-
-app.use("/optimize-resume", aiLimiter);
-app.use("/job-match-resume", aiLimiter);
-app.use("/cover-letter", aiLimiter);
-app.use("/interview-feedback", aiLimiter);
-app.use("/interview-questions", aiLimiter);
 
 module.exports = app;
