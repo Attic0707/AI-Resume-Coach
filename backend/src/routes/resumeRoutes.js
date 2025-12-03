@@ -3,7 +3,12 @@ const express = require("express");
 const OpenAI = require("openai");
 const { simpleLocalOptimize, simpleJobMatchLocal, simpleCoverLetterLocal, simpleJobAnalysisLocal, simpleLinkedInOptimizeLocal } = require("../utils/fallbacks");
 const router = express.Router();
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, });
+
+// Only instantiate OpenAI when we actually have a key AND not in mock mode
+let openai = null;
+if (process.env.OPENAI_API_KEY && process.env.MOCK_AI !== "1") {
+  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, });
+}
 
 // /optimize-resume
 router.post("/optimize-resume", async (req, res) => {
@@ -29,9 +34,10 @@ router.post("/optimize-resume", async (req, res) => {
 
   const isTurkish = language === "tr";
 
-  if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
-    const optimizedText = simpleLocalOptimize( resumeText, targetRole, language );
-    return res.json({ optimizedText, source: "local-mock", });
+  // If no OpenAI client → use local mock
+  if (!openai) {
+    const optimizedText = simpleLocalOptimize( resumeText, targetRole, language  );
+    return res.json({ optimizedText, source: "local-mock" });
   }
 
   try {
@@ -107,7 +113,8 @@ router.post("/job-match-resume", async (req, res) => {
 
   const isTurkish = language === "tr";
 
-  if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
+  // If no OpenAI client → use local mock
+  if (!openai) {
     const tailoredResume = simpleJobMatchLocal( resumeText, jobDescription, language );
     return res.json({ tailoredResume, source: "local-mock", });
   }
@@ -176,7 +183,8 @@ router.post("/cover-letter", async (req, res) => {
 
   const isTurkish = language === "tr";
 
-  if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
+  // If no OpenAI client → use local mock
+  if (!openai) {
     const coverLetter = simpleCoverLetterLocal( resumeText || "", jobDescription || "", language );
     return res.json({ coverLetter, source: "local-mock", });
   }
@@ -253,8 +261,8 @@ router.post("/analyze-job", async (req, res) => {
 
   const isTurkish = language === "tr";
 
-  // Local mock / no API key
-  if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
+  // If no OpenAI client → use local mock
+  if (!openai) {
     const analysis = simpleJobAnalysisLocal(jobDescription, resumeText, language);
     return res.json({ ...analysis, source: "local-mock" });
   }
@@ -390,8 +398,8 @@ router.post("/optimize-linkedin", async (req, res) => {
 
   const isTurkish = language === "tr";
 
-  // Local mock / no API key
-  if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
+  // If no OpenAI client → use local mock
+  if (!openai) {
     const optimized = simpleLinkedInOptimizeLocal(
       linkedInText,
       sectionType,

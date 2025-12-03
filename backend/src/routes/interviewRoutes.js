@@ -3,7 +3,12 @@ const express = require("express");
 const OpenAI = require("openai");
 const { simpleInterviewFeedbackLocal, simpleInterviewQuestionsLocal, } = require("../utils/fallbacks");
 const router = express.Router();
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, });
+
+// Only instantiate OpenAI when we actually have a key AND not in mock mode
+let openai = null;
+if (process.env.OPENAI_API_KEY && process.env.MOCK_AI !== "1") {
+  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, });
+}
 
 // /interview-feedback
 router.post("/interview-feedback", async (req, res) => {
@@ -23,7 +28,8 @@ router.post("/interview-feedback", async (req, res) => {
 
   const isTurkish = language === "tr";
 
-  if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
+  // If no OpenAI client → use local mock
+  if (!openai) {
     const feedback = simpleInterviewFeedbackLocal( question || "", answer, language );
     return res.json({ feedback, score: 7, source: "local-mock", });
   }
@@ -99,7 +105,8 @@ router.post("/interview-questions", async (req, res) => {
     });
   }
 
-  if (!process.env.OPENAI_API_KEY || process.env.MOCK_AI === "1") {
+  // If no OpenAI client → use local mock
+  if (!openai) {
     const questions = simpleInterviewQuestionsLocal( role || "", level, mode, language );
     return res.json({ questions, source: "local-mock" });
   }
