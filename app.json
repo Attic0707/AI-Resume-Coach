@@ -33,6 +33,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
+      "EXPO_PUBLIC_API_BASE_URL": "https://resume-iq-2p17.onrender.com",
       "eas": {
         "projectId": "32521dfc-d856-4ecb-a3a5-0b5439aa9eb3"
       }
