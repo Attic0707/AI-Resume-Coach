@@ -34,7 +34,7 @@ router.post("/optimize-resume", async (req, res) => {
   }
 
   // 🔒 Guardrails: abuse / out-of-scope check
-  const guard = assessCareerInput({ resumeText: resumeText || "", jobDescription: jobDescription || "" });
+  const guard = assessCareerInput({ resumeText: resumeText || "", targetRole: targetRole || "" });
   if (!guard.ok) {
     return res.status(400).json({
       error: guard.message,
@@ -434,7 +434,7 @@ router.post("/optimize-linkedin", async (req, res) => {
   }
 
   // 🔒 Guardrails: abuse / out-of-scope check
-  const guard = assessCareerInput({ resumeText: linkedInText || "", jobDescription: jobDescription || "" });
+  const guard = assessCareerInput({ linkedInText: linkedInText || "", targetRole: targetRole || "" });
   if (!guard.ok) {
     return res.status(400).json({
       error: guard.message,

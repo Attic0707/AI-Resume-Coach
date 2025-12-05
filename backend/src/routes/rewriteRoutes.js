@@ -30,6 +30,15 @@ router.post("/bullet-rewrite", async (req, res) => {
     });
   }
 
+  // 🔒 Guardrails: abuse / out-of-scope check
+  const guard = assessCareerInput({ bulletText: bulletText || "", targetRole: targetRole || "" });
+  if (!guard.ok) {
+    return res.status(400).json({
+      error: guard.message,
+      reason: guard.reason,
+    });
+  }
+
   const isTurkish = language === "tr";
 
   // If no OpenAI client → use local mock

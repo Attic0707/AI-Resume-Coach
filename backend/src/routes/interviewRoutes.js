@@ -28,7 +28,7 @@ router.post("/interview-feedback", async (req, res) => {
   }
 
   // 🔒 Guardrails: abuse / out-of-scope check
-  const guard = assessCareerInput({ resumeText: question || "", jobDescription: answer || "" });
+  const guard = assessCareerInput({ question: question || "", answer: answer || "" });
   if (!guard.ok) {
     return res.status(400).json({
       error: guard.message,
@@ -116,7 +116,7 @@ router.post("/interview-questions", async (req, res) => {
   }
 
   // 🔒 Guardrails: abuse / out-of-scope check
-  const guard = assessCareerInput({ resumeText: role || "", jobDescription: answer || "" });
+  const guard = assessCareerInput({ role: role || "" });
   if (!guard.ok) {
     return res.status(400).json({
       error: guard.message,
