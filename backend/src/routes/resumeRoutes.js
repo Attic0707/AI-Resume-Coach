@@ -14,6 +14,7 @@ if (process.env.OPENAI_API_KEY && process.env.MOCK_AI !== "1") {
 // /optimize-resume
 router.post("/optimize-resume", async (req, res) => {
   const { resumeText, targetRole, language = "en" } = req.body || {};
+  console.log('CHECK 3');
 
   if (!resumeText || typeof resumeText !== "string") {
     return res
@@ -34,7 +35,9 @@ router.post("/optimize-resume", async (req, res) => {
   }
 
   // 🔒 Guardrails: abuse / out-of-scope check
+  console.log('CHECK 4');
   const guard = assessCareerInput({ resumeText: resumeText || "", targetRole: targetRole || "" });
+  console.log('CHECK 5');
   if (!guard.ok) {
     return res.status(400).json({
       error: guard.message,
