@@ -1,6 +1,7 @@
 // backend/src/routes/interviewRoutes.js
 const express = require("express");
 const OpenAI = require("openai");
+const { assessCareerInput } = require("../utils/guardrails");
 const { simpleInterviewFeedbackLocal, simpleInterviewQuestionsLocal, } = require("../utils/fallbacks");
 const router = express.Router();
 
@@ -23,6 +24,15 @@ router.post("/interview-feedback", async (req, res) => {
   if (answer.length > 500) {
     return res.status(400).json({
       error: "Answer is too long. Maximum allowed is 500 characters."
+    });
+  }
+
+  // 🔒 Guardrails: abuse / out-of-scope check
+  const guard = assessCareerInput({ resumeText: question || "", jobDescription: answer || "" });
+  if (!guard.ok) {
+    return res.status(400).json({
+      error: guard.message,
+      reason: guard.reason,
     });
   }
 
@@ -102,6 +112,15 @@ router.post("/interview-questions", async (req, res) => {
   if (role.length > 100) {
     return res.status(400).json({
       error: "Role is too long. Maximum allowed is 100 characters."
+    });
+  }
+
+  // 🔒 Guardrails: abuse / out-of-scope check
+  const guard = assessCareerInput({ resumeText: role || "", jobDescription: answer || "" });
+  if (!guard.ok) {
+    return res.status(400).json({
+      error: guard.message,
+      reason: guard.reason,
     });
   }
 

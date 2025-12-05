@@ -1,6 +1,7 @@
 // backend/src/routes/resumeRoutes.js
 const express = require("express");
 const OpenAI = require("openai");
+const { assessCareerInput } = require("../utils/guardrails");
 const { simpleLocalOptimize, simpleJobMatchLocal, simpleCoverLetterLocal, simpleJobAnalysisLocal, simpleLinkedInOptimizeLocal } = require("../utils/fallbacks");
 const router = express.Router();
 
@@ -29,6 +30,15 @@ router.post("/optimize-resume", async (req, res) => {
   if (targetRole && targetRole.length > 100) {
     return res.status(400).json({
       error: "Target Role is too long. Maximum allowed is 100 characters."
+    });
+  }
+
+  // 🔒 Guardrails: abuse / out-of-scope check
+  const guard = assessCareerInput({ resumeText: resumeText || "", jobDescription: jobDescription || "" });
+  if (!guard.ok) {
+    return res.status(400).json({
+      error: guard.message,
+      reason: guard.reason,
     });
   }
 
@@ -111,6 +121,15 @@ router.post("/job-match-resume", async (req, res) => {
     });
   }
 
+  // 🔒 Guardrails: abuse / out-of-scope check
+  const guard = assessCareerInput({ resumeText: resumeText || "", jobDescription: jobDescription || "" });
+  if (!guard.ok) {
+    return res.status(400).json({
+      error: guard.message,
+      reason: guard.reason,
+    });
+  }
+
   const isTurkish = language === "tr";
 
   // If no OpenAI client → use local mock
@@ -179,6 +198,15 @@ router.post("/cover-letter", async (req, res) => {
     return res
       .status(400)
       .json({ error: "At least jobDescription or resumeText is required" });
+  }
+
+  // 🔒 Guardrails: abuse / out-of-scope check
+  const guard = assessCareerInput({ resumeText: resumeText || "", jobDescription: jobDescription || "" });
+  if (!guard.ok) {
+    return res.status(400).json({
+      error: guard.message,
+      reason: guard.reason,
+    });
   }
 
   const isTurkish = language === "tr";
@@ -256,6 +284,15 @@ router.post("/analyze-job", async (req, res) => {
   if (resumeText && resumeText.length > 20000) {
     return res.status(400).json({
       error: "Resume is too long. Maximum allowed is 20,000 characters.",
+    });
+  }
+
+  // 🔒 Guardrails: abuse / out-of-scope check
+  const guard = assessCareerInput({ resumeText: resumeText || "", jobDescription: jobDescription || "" });
+  if (!guard.ok) {
+    return res.status(400).json({
+      error: guard.message,
+      reason: guard.reason,
     });
   }
 
@@ -393,6 +430,15 @@ router.post("/optimize-linkedin", async (req, res) => {
   if (targetRole && targetRole.length > 120) {
     return res.status(400).json({
       error: "Target role is too long. Maximum allowed is 120 characters.",
+    });
+  }
+
+  // 🔒 Guardrails: abuse / out-of-scope check
+  const guard = assessCareerInput({ resumeText: linkedInText || "", jobDescription: jobDescription || "" });
+  if (!guard.ok) {
+    return res.status(400).json({
+      error: guard.message,
+      reason: guard.reason,
     });
   }
 
