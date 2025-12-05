@@ -1,11 +1,6 @@
 // app/utils/api.js
 
-// Single source of truth for backend URL
-// 1) If EXPO_PUBLIC_API_BASE_URL is set → use that
-// 2) Else if in dev → use local backend
-// 3) Else → use Render backend
-// const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || (__DEV__ ? "http://localhost:3001" : "https://resume-iq-2p17.onrender.com");
-const BASE_URL = "https://resume-iq-2p17.onrender.com";
+const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 
 // Generic request helper
 async function request(path, { method = "GET", body, headers = {} } = {}) {
