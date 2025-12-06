@@ -11,13 +11,16 @@
     "preview": {
       "distribution": "store",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://resume-iq-2p17.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://resume-iq-2p17.onrender.com",
+        "EXPO_PUBLIC_REVENUECAT_API_KEY": "appl_wGJlmHNdHRZXbwPcceNkwyIItUx"
       }
     },
     "production": {
       "autoIncrement": true,
+      "distribution" : "store",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://resume-iq-2p17.onrender.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://resume-iq-2p17.onrender.com",
+        "EXPO_PUBLIC_REVENUECAT_API_KEY": "appl_wGJlmHNdHRZXbwPcceNkwyIItUx"
       }
     }
   },

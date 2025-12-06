@@ -1,6 +1,7 @@
 // app/context/AppContext.js
-import React, { createContext, useMemo, useState, useContext, } from "react";
+import React, { createContext, useMemo, useState, useContext, useEffect } from "react";
 import { View, Text, TouchableOpacity, Image, Alert } from "react-native";
+import Purchases from "react-native-purchases";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import styles from "../styles";
@@ -28,12 +29,36 @@ const darkTheme = {
   textOnAccent: "#020617",
 };
 
+const REVCAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
+
 export function AppProvider({ children }) {
   const [themeName, setThemeName] = useState("dark"); // "light" | "dark"
   const [isPro, setIsPro] = useState(false);
   const [freeCreditsLeft, setFreeCreditsLeft] = useState(5);
 
   const theme = themeName === "dark" ? darkTheme : lightTheme;
+
+  // 🔄 On app start, ask RevenueCat "does this user already own Pro?"
+  useEffect(() => {
+    if(!REVCAT_API_KEY) {
+      console.log("[RevenueCat] Skipping entitlement sync - EXPO_PUBLIC_REVENUECAT_API_KEY missing.");
+      return;
+    }
+    const syncEntitlements = async () => {
+      try {
+        const customerInfo = await Purchases.getCustomerInfo();
+        const hasPro =
+          customerInfo.entitlements?.active?.premium != null;
+        setIsPro(hasPro);
+      } catch (e) {
+        console.log("[RevenueCat] getCustomerInfo error:", e);
+      } finally {
+        setIsLoadingEntitlements(false);
+      }
+    };
+
+    syncEntitlements();
+  }, []);
 
   const toggleTheme = () => {
     setThemeName((prev) => (prev === "dark" ? "light" : "dark"));

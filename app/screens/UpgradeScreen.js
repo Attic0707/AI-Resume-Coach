@@ -5,6 +5,8 @@ import Purchases from "react-native-purchases";
 import { AppContext } from "../context/AppContext";
 import styles from "../styles";
 
+const isDev = __DEV__;
+
 export default function UpgradeScreen() {
   const { theme, themeName, toggleTheme, isPro, upgradeToPro, freeCreditsLeft, } = useContext(AppContext);
   const [offerings, setOfferings] = useState(null);
@@ -109,7 +111,7 @@ export default function UpgradeScreen() {
               {purchaseLoading ? (
                 <ActivityIndicator color={theme.textOnAccent} /> ) : (
                 <Text style={[ styles.primaryButtonText, { color: theme.textOnAccent }, ]} >
-                  {loadingOfferings ? "Loading options..." : "Unlock Pro (Test Store)"}
+                  {loadingOfferings ? "Loading options..." : "Unlock Pro"}
                 </Text>
               )}
             </TouchableOpacity>

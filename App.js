@@ -18,12 +18,19 @@ import MyDocumentsScreen from "./app/screens/MyDocumentsScreen";
 import UpgradeScreen from "./app/screens/UpgradeScreen";
 
 const Stack = createNativeStackNavigator();
+const REVCAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
 
 export default function App() {
   // RevenueCat setup
   useEffect(() => {
+    if (!REVCAT_API_KEY) {
+      console.warn(
+        "[RevenueCat] EXPO_PUBLIC_REVENUECAT_API_KEY is missing. Purchases.configure will be skipped."
+      );
+      return;
+    }
     Purchases.configure({
-      apiKey: "test_occeutlxPVPolTrDEKYepIdSRbT",
+      apiKey: REVCAT_API_KEY,
     });
   }, []);
 
