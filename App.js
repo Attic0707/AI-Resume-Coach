@@ -17,12 +17,17 @@ import LinkedInOptimizerScreen from "./app/screens/LinkedInOptimizerScreen";
 import MyDocumentsScreen from "./app/screens/MyDocumentsScreen";
 import UpgradeScreen from "./app/screens/UpgradeScreen";
 
+import { pingBackend } from "./app/utils/api";
+
 const Stack = createNativeStackNavigator();
 const REVCAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
 
 export default function App() {
-  // RevenueCat setup
   useEffect(() => {
+    // Wake Backend
+    pingBackend();
+
+    // RevenueCat setup
     if (!REVCAT_API_KEY) {
       console.warn(
         "[RevenueCat] EXPO_PUBLIC_REVENUECAT_API_KEY is missing. Purchases.configure will be skipped."

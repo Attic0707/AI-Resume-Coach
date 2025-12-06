@@ -36,8 +36,18 @@ async function request(path, { method = "GET", body, headers = {} } = {}) {
   }
 }
 
-// ----- Specific API calls ----- //
+export async function pingBackend() {
+  try {
+    const res = await fetch(`${BASE_URL}/`);
+    if (!res.ok) throw new Error("Health check failed");
+    return true;
+  } catch (err) {
+    console.log("Backend cold-start? Ping failed:", err);
+    return false;
+  }
+}
 
+// ----- Specific API calls ----- //
 export async function optimizeResume({ resumeText, targetRole, language }) {
   return request("/optimize-resume", { method: "POST", body: { resumeText, targetRole, language } });
 }
