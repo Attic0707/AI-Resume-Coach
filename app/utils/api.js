@@ -1,8 +1,7 @@
 // app/utils/api.js
 
 // Single source of truth for backend URL
-// const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? (__DEV__ ? "http://127.0.0.1:4000" : "https://resume-iq-2p17.onrender.com");
-const BASE_URL = "https://resume-iq-2p17.onrender.com";
+const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? (__DEV__ ? "http://127.0.0.1:4000" : "https://resume-iq-2p17.onrender.com");
 
 // Generic request helper
 async function request(path, { method = "GET", body, headers = {} } = {}) {
