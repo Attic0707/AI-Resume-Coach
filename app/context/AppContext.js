@@ -40,10 +40,12 @@ export function AppProvider({ children }) {
 
   // 🔄 On app start, ask RevenueCat "does this user already own Pro?"
   useEffect(() => {
+    setIsPro(true); // testing
     if(!REVCAT_API_KEY) {
       console.log("[RevenueCat] Skipping entitlement sync - EXPO_PUBLIC_REVENUECAT_API_KEY missing.");
       return;
     }
+    /*
     const syncEntitlements = async () => {
       try {
         const customerInfo = await Purchases.getCustomerInfo();
@@ -58,6 +60,7 @@ export function AppProvider({ children }) {
     };
 
     syncEntitlements();
+    */
   }, []);
 
   const toggleTheme = () => {

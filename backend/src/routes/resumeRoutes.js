@@ -2,7 +2,7 @@
 const express = require("express");
 const OpenAI = require("openai");
 const { assessCareerInput } = require("../utils/guardrails");
-const { simpleLocalOptimize, simpleJobMatchLocal, simpleCoverLetterLocal, simpleJobAnalysisLocal, simpleLinkedInOptimizeLocal } = require("../utils/fallbacks");
+const { simpleLocalOptimize, simpleJobMatchLocal, simpleCoverLetterLocal, simpleJobAnalysisLocal, simpleLinkedInOptimizeLocal, simpleImprovedAboutMeLocal } = require("../utils/fallbacks");
 const router = express.Router();
 
 // Only instantiate OpenAI when we actually have a key AND not in mock mode
@@ -515,6 +515,111 @@ router.post("/optimize-linkedin", async (req, res) => {
         targetRole,
         language
       );
+      return res.status(200).json({
+        optimizedText: optimized,
+        source: "local-fallback",
+        warning: isTurkish
+          ? "OpenAI kotası doldu, local mock kullanılıyor."
+          : "OpenAI quota exceeded, using local fallback.",
+      });
+    }
+
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// /about-me
+router.post("/about-me", async (req, res) => {
+  const {
+    aboutmeText,
+    sectionType = "summary", // "summary" | "about" | "experience" | etc. (optional)
+    language = "en",
+  } = req.body || {};
+
+  if (!aboutmeText || typeof aboutmeText !== "string") {
+    return res
+      .status(400)
+      .json({ error: "aboutmeText (string) is required" });
+  }
+
+  if (aboutmeText.length > 8000) {
+    return res.status(400).json({
+      error: "aboutmeText text is too long. Maximum allowed is 8,000 characters.",
+    });
+  }
+
+  // 🔒 Guardrails: abuse / out-of-scope check
+  const guard = assessCareerInput({ aboutmeText: aboutmeText || "" });
+  if (!guard.ok) {
+    return res.status(400).json({
+      error: guard.message,
+      reason: guard.reason,
+    });
+  }
+
+  const isTurkish = language === "tr";
+
+  // If no OpenAI client → use local mock
+  if (!openai) {
+    const optimized = simpleImprovedAboutMeLocal( aboutmeText, language );
+    return res.json({
+      optimizedText: optimized,
+      source: "local-mock",
+    });
+  }
+
+  try {
+    const systemPrompt = isTurkish
+      ? "Sen özgeçmiş (CV) ve kariyer metinleri konusunda uzman bir kariyer koçusun. Kullanıcı sana; CV özeti, “Hakkımda” metni, iş deneyimi girdisi veya benzer bir bölüm metni gönderecek. Görevin, bu metni daha güçlü, ölçülebilir, işe alımcı dostu ve hedef role uygun hale getirmek. Yeni şirketler, pozisyonlar, tarihler veya açıkça ima edilmeyen başarılar UYDURMA. Kullanıcının gerçek geçmişine ve tonuna sadık kal. Çıktıyı akıcı, profesyonel ve yayınlanmaya hazır bir metin olarak TÜRKÇE yaz."
+      : "You are an expert resume and career-branding writer. The user will send you text that may be a resume summary, an About Me section, a work experience entry, or a similar career-related section. Your goal is to rewrite it to be stronger, more measurable, recruiter-friendly, and aligned with the target roles. Do NOT invent new employers, roles, dates, or clearly unrealistic achievements. Stay truthful to the user’s background and keep a natural, human tone. Your output must be polished and ready to paste into a resume or profile.";
+
+    const sectionLabel = sectionType === "experience"
+      ? (isTurkish ? "İş deneyimi bölümü" : "Experience section")
+      : (isTurkish ? "Hakkımda / Özet bölümü" : "About / Summary section");
+
+    const userPrompt = ` Section label: ${sectionLabel} Original text:  ${aboutmeText}
+
+    Rewrite this as a high-quality resume / career section.
+
+    Instructions:
+    - Keep everything truthful. Do NOT invent new employers, roles, dates, degrees or clearly exaggerated achievements.
+    - Strengthen the first 1–2 sentences so they clearly position the candidate (who they are, what they do, what value they bring).
+    - Focus on impact and outcomes, not just duties:
+      - use strong action verbs
+      - add measurable results and concrete examples when reasonably inferable
+    - Keep the existing perspective consistent (first-person or third-person) and use a confident, professional tone.
+    - Make it easy for recruiters and ATS to scan:
+      - short paragraphs (1–3 sentences) and/or
+      - bullet-style lines for achievements.
+    - Improve clarity, flow and structure. Remove repetition, vague language and filler buzzwords.
+    - Naturally weave in relevant skills, technologies and domain keywords when they fit the context; avoid keyword stuffing.
+    - Do not add headings, labels, or meta commentary.
+    - Output ONLY the improved section text, ready to paste into a resume or profile, with no extra explanation or quotes.
+    `;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.5,
+      max_tokens: 800,
+    });
+
+    const optimizedText =
+      completion.choices?.[0]?.message?.content?.trim() ||
+      simpleImprovedAboutMeLocal(aboutmeText, language);
+
+    return res.json({
+      optimizedText,
+      source: "openai",
+    });
+  } catch (err) {
+    console.error("Error in /about-me:", err);
+
+    if (err?.code === "insufficient_quota" || err?.status === 429) {
+      const optimized = simpleImprovedAboutMeLocal( aboutmeText, language );
       return res.status(200).json({
         optimizedText: optimized,
         source: "local-fallback",

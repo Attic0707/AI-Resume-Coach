@@ -315,6 +315,63 @@ function simpleLinkedInOptimizeLocal(linkedInText, sectionType = "about", target
   return header + improved + hints;
 }
 
+function simpleImprovedAboutMeLocal(aboutmeText, language = "en") {
+  const isTurkish = language === "tr";
+  const base = (aboutmeText || "").trim();
+
+  const header = isTurkish
+    ? "Özgeçmiş / kariyer bölümü (local mock ile hafifçe iyileştirilmiş):\n\n"
+    : "Resume / career section (lightly improved via local mock):\n\n";
+
+  if (!base) {
+    return (
+      header +
+      (isTurkish
+        ? "Metin boş görünüyor. Lütfen özgeçmişinden bir paragraf veya deneyim bölümü ekle."
+        : "The text seems empty. Please provide a paragraph or experience section from your resume.")
+    );
+  }
+
+  const hintLines = [
+    isTurkish
+      ? "• Açılış cümleni daha net yap: kim olduğunu ve ne kattığını 1–2 cümlede özetle."
+      : "• Make your opening sentence clearer: who you are and what you bring in 1–2 lines.",
+    isTurkish
+      ? "• Sadece görev değil, sonuç ve etkiyi vurgula (örn. %X artış, Y proje, Z müşteri)."
+      : "• Emphasize results and impact, not just duties (e.g., %X increase, Y projects, Z clients).",
+    isTurkish
+      ? "• Cümlelerini sade, profesyonel ve kolay okunur tut (kısa paragraflar, güçlü fiiller)."
+      : "• Keep sentences clear, professional, and easy to scan (short paragraphs, strong verbs).",
+  ];
+
+  const hints =
+    (isTurkish ? "\n\nNotlar:\n" : "\n\nNotes:\n") +
+    hintLines.map((l) => "• " + l).join("\n");
+
+  // Very naive text tweaks just to avoid completely raw echo
+  let improved = base;
+
+  if (!isTurkish) {
+    improved = improved
+      .replace(/\bhard[- ]working\b/gi, "results-driven")
+      .replace(/\bteam player\b/gi, "collaborative professional")
+      .replace(/\bresponsible for\b/gi, "led")
+      .replace(/\btasked with\b/gi, "entrusted with");
+  } else {
+    improved = improved
+      .replace(/\büzerine çalıştım\b/gi, "sorumluluk aldım")
+      .replace(/\becellendim\b/gi, "uzmanlaştım")
+      .replace(/\bsıkı çalışan\b/gi, "sonuç odaklı");
+  }
+
+  // Add one generic coaching nudge at the end
+  improved += isTurkish
+    ? "\n\n• Mümkün olduğunda sayılar, ölçülebilir sonuçlar ve özel örnekler ekleyerek bölümü güçlendir."
+    : "\n\n• Whenever possible, add numbers, measurable results, and concrete examples to strengthen this section.";
+
+  return header + improved + hints;
+}
+
 module.exports = {
   simpleLocalOptimize,
   simpleJobMatchLocal,
@@ -324,4 +381,5 @@ module.exports = {
   simpleBulletRewriteLocal,
   simpleJobAnalysisLocal,
   simpleLinkedInOptimizeLocal,
+  simpleImprovedAboutMeLocal,
 };
