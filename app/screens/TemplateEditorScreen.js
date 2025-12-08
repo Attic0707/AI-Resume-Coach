@@ -463,7 +463,7 @@ const stripCurrentFromExperience = (text = "") => {
 const AI_CHAR_LIMIT = 20000;
 
 export default function TemplateEditorScreen({ route, navigation }) {
-  const { theme, isPro, freeCreditsLeft, consumeCredit,  } = useContext(AppContext);
+  const { theme, isPro, freeCreditsLeft, consumeCredit, language, setLanguage } = useContext(AppContext);
   const { templateId, templateName } = route.params || {};
 
   const [fields, setFields] = useState(
@@ -477,7 +477,6 @@ export default function TemplateEditorScreen({ route, navigation }) {
   const [savingDoc, setSavingDoc] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
 
-  const [language, setLanguage] = useState("en"); // 'en' or 'tr'
   const isTurkish = language === "tr";
   const disclaimer = language === "tr" ? "*AI tarafından üretilmiştir. Lütfen başvurmadan önce gözden geçirin." : "*AI-generated. Please review before using in applications.";
 
@@ -513,7 +512,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
     return {
       name: get("name"),
       headline: get("headline"),
-      summary: get("summary"),
+      aboutMe: get("aboutMe"),
       experience: get("experience"),
       education: get("education"),
       skills: get("skills"),
@@ -739,7 +738,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
   };
 
   const renderPreviewContent = () => {
-    const { name, headline, summary, experience, education, skills, projects } =
+    const { name, headline, aboutMe, experience, education, skills, projects } =
       previewData;
 
     const mainName = name || "Your Name";
@@ -766,7 +765,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
               <Text style={styles.pvHeadline}>{mainHeadline}</Text>
             </View>
 
-            <Section title="PROFILE" text={summary} />
+            <Section title="PROFILE" text={aboutMe} />
             <Section title="EXPERIENCE" text={experience} />
             <Section title="EDUCATION" text={education} />
             <Section title="SKILLS" text={skills} />
@@ -785,7 +784,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
 
             <View style={styles.pvSeparator} />
 
-            <Section title="SUMMARY" text={summary} />
+            <Section title="SUMMARY" text={aboutMe} />
             <View style={styles.pvSeparatorThin} />
             <Section title="PROFESSIONAL EXPERIENCE" text={experience} />
             <View style={styles.pvSeparatorThin} />
@@ -807,7 +806,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
 
             <View style={styles.pvTwoCol}>
               <View style={styles.pvMainCol}>
-                <Section title="SUMMARY" text={summary} />
+                <Section title="SUMMARY" text={aboutMe} />
                 <Section title="EXPERIENCE" text={experience} />
                 <Section title="PROJECTS" text={projects} />
               </View>
@@ -833,7 +832,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
 
             <View style={styles.pvTwoCol}>
               <View style={styles.pvMainCol}>
-                <Section title="SUMMARY" text={summary} />
+                <Section title="SUMMARY" text={aboutMe} />
                 <Section title="EXPERIENCE" text={experience} />
               </View>
               <View style={styles.pvSideColBoxed}>
@@ -858,7 +857,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
                 </Text>
               </View>
 
-              <Section title="ABOUT" text={summary} />
+              <Section title="ABOUT" text={aboutMe} />
               <Section title="HIGHLIGHT EXPERIENCE" text={experience} />
               <Section title="EDUCATION" text={education} />
               <Section title="SKILLS & TOOLS" text={skills} />
@@ -875,7 +874,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
               <Text style={styles.pvName}>{mainName}</Text>
               <Text style={styles.pvHeadline}>{mainHeadline}</Text>
             </View>
-            <Section title="SUMMARY" text={summary} />
+            <Section title="SUMMARY" text={aboutMe} />
             <Section title="EXPERIENCE" text={experience} />
             <Section title="EDUCATION" text={education} />
             <Section title="SKILLS" text={skills} />
@@ -889,32 +888,32 @@ export default function TemplateEditorScreen({ route, navigation }) {
     <View style={[ styles.container, { backgroundColor: theme.bg }, ]} >
       {/* Header */}
       <View style={styles.headerRow}>
-        <Text style={[styles.headerTitle, { color: theme.textPrimary }]} >
+        <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>
           {headerTitle}
         </Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.headerTitle}>
-        {/* Disclaimer */}
-        <Text style={[ styles.sectionSubtitle, { color: theme.textSecondary }, ]}> 
+
+      {/* Sub-header row: disclaimer + language toggle inline */}
+      <View style={styles.subHeaderRow}>
+        <Text style={[ styles.sectionSubtitle, { color: theme.textSecondary, flex: 1 }, ]} numberOfLines={2} >
           {disclaimer}
         </Text>
-        {/* Language toggle */}
+
         <View style={styles.languageToggleWrapper}>
-          <TouchableOpacity style={[ styles.languageButton, isTurkish && styles.languageButtonActive, ]} onPress={() => setLanguage("tr")}  >
+          <TouchableOpacity style={[ styles.languageButton, isTurkish && styles.languageButtonActive, ]} onPress={() => setLanguage("tr")} >
             <Text style={[ styles.languageButtonText, isTurkish && styles.languageButtonTextActive, ]} >
               TR
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[ styles.languageButton, !isTurkish && styles.languageButtonActive, ]} onPress={() => setLanguage("en")}  >
+          <TouchableOpacity style={[ styles.languageButton, !isTurkish && styles.languageButtonActive, ]} onPress={() => setLanguage("en")} >
             <Text style={[ styles.languageButtonText, !isTurkish && styles.languageButtonTextActive, ]} >
               EN
             </Text>
           </TouchableOpacity>
         </View>
       </View>
-
 
       {/* Fields */}
       <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled" >
@@ -1057,47 +1056,68 @@ export default function TemplateEditorScreen({ route, navigation }) {
 
                 <ScrollView style={styles.previewScroll} contentContainerStyle={{ padding: 16, paddingBottom: 32, }} keyboardShouldPersistTaps="handled" >
                   {/* Primary 1 */}
-                  <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
-                    {config.primary1Label}
-                  </Text>
-                  <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary1Key]} 
-                    placeholder={config.primary1Placeholder} placeholderTextColor={theme.textSecondary} 
-                    onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary1Key]: t, }))}/>
+                  {config.primary1Key && (
+                    <>
+                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
+                      {config.primary1Label}
+                    </Text>
+                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary1Key]} 
+                      placeholder={config.primary1Placeholder} placeholderTextColor={theme.textSecondary} 
+                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary1Key]: t, }))}/>
+                    </>
+                  )}
 
                   {/* Primary 2 */}
-                  <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
-                    {config.primary2Label}
-                  </Text>
-                  <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary2Key]}
-                    placeholder={config.primary2Placeholder} placeholderTextColor={theme.textSecondary}
-                    onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary2Key]: t, })) }/>
+                  {config.primary2Key && (
+                    <>
+                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
+                      {config.primary2Label}
+                    </Text>
+                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary2Key]}
+                      placeholder={config.primary2Placeholder} placeholderTextColor={theme.textSecondary}
+                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary2Key]: t, })) }/>
+                    </>
+                  )}
 
                   {/* Primary 3 */}
-                  <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
-                    {config.primary3Label}
-                  </Text>
-                  <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary3Key]}
-                    placeholder={config.primary3Placeholder} placeholderTextColor={theme.textSecondary}
-                    onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary3Key]: t, })) }/>
+                  {config.primary3Key && (
+                    <>
+                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
+                      {config.primary3Label}
+                    </Text>
+                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary3Key]}
+                      placeholder={config.primary3Placeholder} placeholderTextColor={theme.textSecondary}
+                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary3Key]: t, })) }/>
+                    </>
+                  )}
 
                   {/* Primary 4 */}
-                  <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
-                    {config.primary4Label}
-                  </Text>
-                  <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary4Key]}
-                    placeholder={config.primary4Placeholder} placeholderTextColor={theme.textSecondary}
-                    onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary4Key]: t, })) }/>
+                  {config.primary4Key && (
+                    <>
+                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
+                      {config.primary4Label}
+                    </Text>
+                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary4Key]}
+                      placeholder={config.primary4Placeholder} placeholderTextColor={theme.textSecondary}
+                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary4Key]: t, })) }/>
+                    </>
+                  )}
 
                   {/* Primary 5 */}
-                  <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
-                    {config.primary5Label}
-                  </Text>
-                  <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary5Key]}
-                    placeholder={config.primary5Placeholder} placeholderTextColor={theme.textSecondary}
-                    onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary5Key]: t, })) }/>
+                  {config.primary5Key && (
+                    <>
+                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
+                      {config.primary5Label}
+                    </Text>
+                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary5Key]}
+                      placeholder={config.primary5Placeholder} placeholderTextColor={theme.textSecondary}
+                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary5Key]: t, })) }/>
+                    </>
+                  )}
 
                   {/* Dates row */}
                   {config.supportsDates && (
+                    <>
                     <View style={{ flexDirection: "row", marginTop: 10 }} >
                       <View style={{ flex: 1, marginRight: 6 }}>
                         <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
@@ -1122,10 +1142,12 @@ export default function TemplateEditorScreen({ route, navigation }) {
                         />
                       </View>
                     </View>
+                    </>
                   )}
 
                   {/* Current toggle for experience */}
                   {config.supportsCurrent && (
+                    <>
                     <TouchableOpacity style={[ styles.currentToggle, { borderColor: theme.border, backgroundColor: modalData.isCurrent ? "rgba(34,197,94,0.1)" : "transparent", }, ]}
                       onPress={toggleCurrent} >
                       <View style={[ styles.checkbox, { borderColor: theme.border, backgroundColor: modalData.isCurrent ? "#22c55e" : "transparent", }, ]} />
@@ -1133,10 +1155,12 @@ export default function TemplateEditorScreen({ route, navigation }) {
                         Currently ongoing
                       </Text>
                     </TouchableOpacity>
+                    </>
                   )}
 
                   {/* Details + AI */}
                   {config.supportsAI && (
+                    <>
                     <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, marginBottom: 4, }} >
                       <Text style={[ styles.fieldLabel, { color: theme.textPrimary }, ]} >
                         Details / Highlights
@@ -1149,20 +1173,17 @@ export default function TemplateEditorScreen({ route, navigation }) {
                           </Text>
                         )}
                       </TouchableOpacity>
-                    </View>) && (
-
-                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, minHeight: 120, }, ]}
-                      multiline textAlignVertical="top" value={modalData.details}
-                      onChangeText={(t) => setModalData((prev) => ({ ...prev, details: t, })) }
-                      placeholder={
-                        isExperience
-                          ? "Describe your responsibilities and achievements.\nUse bullet-style lines. AI will help make them stronger."
-                          : "Add key modules, thesis, honors or notable achievements. AI can polish this."
-                      }
-                      placeholderTextColor={theme.textSecondary}
-                    />
+                      </View>
+                        <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, minHeight: 120, }, ]}
+                          multiline textAlignVertical="top" value={modalData.details}
+                          onChangeText={(t) => setModalData((prev) => ({ ...prev, details: t, })) }
+                          placeholder={
+                            isExperience
+                              ? "Describe your responsibilities and achievements.\nUse bullet-style lines. AI will help make them stronger."
+                              : "Add key modules, thesis, honors or notable achievements. AI can polish this."
+                          } placeholderTextColor={theme.textSecondary} />
+                      </>
                   )}
-
                 </ScrollView>
               </>
             );
@@ -1217,7 +1238,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    
   },
   fieldLabel: { fontSize: 14, fontWeight: "600" },
   fieldHeaderButtons: {
@@ -1275,6 +1295,13 @@ const styles = StyleSheet.create({
   previewTitle: { fontSize: 18, fontWeight: "600" },
   previewScroll: { paddingHorizontal: 16, paddingTop: 8 },
   previewTextContent: { fontSize: 14, lineHeight: 20 },
+  subHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
   // --- Preview base page ---
   pvPage: {
     borderRadius: 16,

@@ -35,6 +35,7 @@ export function AppProvider({ children }) {
   const [themeName, setThemeName] = useState("dark"); // "light" | "dark"
   const [isPro, setIsPro] = useState(false);
   const [freeCreditsLeft, setFreeCreditsLeft] = useState(5);
+  const [language, setLanguage] = useState("en"); 
 
   const theme = themeName === "dark" ? darkTheme : lightTheme;
 
@@ -62,6 +63,15 @@ export function AppProvider({ children }) {
     syncEntitlements();
     */
   }, []);
+
+  const toggleLanguage = (lang) => {
+    // allow either explicit lang or simple toggle
+    if (lang === "en" || lang === "tr") {
+      setLanguage(lang);
+    } else {
+      setLanguage((prev) => (prev === "en" ? "tr" : "en"));
+    }
+  };
 
   const toggleTheme = () => {
     setThemeName((prev) => (prev === "dark" ? "light" : "dark"));
@@ -92,7 +102,10 @@ export function AppProvider({ children }) {
       upgradeToPro,
       freeCreditsLeft,
       consumeCredit,
-      canUseFeature
+      canUseFeature,
+      language,
+      setLanguage,
+      toggleLanguage,
     }),
     [theme, themeName, isPro, freeCreditsLeft]
   );
