@@ -2,7 +2,7 @@
 const express = require("express");
 const OpenAI = require("openai");
 const { assessCareerInput } = require("../utils/guardrails");
-const { simpleImprovedAboutMeLocal, simpleImprovedSkillsLocal, simpleImprovedProjectsLocal, simpleImprovedExpertiseLocal, simpleImprovedPublishesLocal } = require("../utils/fallbacks");
+const { simpleImprovedAboutMeLocal, simpleImprovedSkillsLocal, simpleImprovedProjectsLocal, simpleImprovedExpertiseLocal, simpleImprovedPublishesLocal, simpleImprovedWorkDetailsLocal, simpleImprovedEduDetailsLocal} = require("../utils/fallbacks");
 const router = express.Router();
 
 // Only instantiate OpenAI when we actually have a key AND not in mock mode
@@ -472,6 +472,187 @@ router.post("/publishes", async (req, res) => {
 
     if (err?.code === "insufficient_quota" || err?.status === 429) {
       const optimized = simpleImprovedPublishesLocal(rawText, language);
+      return res.status(200).json({
+        optimizedText: optimized,
+        source: "local-fallback",
+        warning: isTurkish
+          ? "OpenAI kotası doldu, local mock kullanılıyor."
+          : "OpenAI quota exceeded, using local fallback.",
+      });
+    }
+
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+/**
+ * /work-details
+ * - Treats rawText as responsibilities & achievements for a single role.
+ * - Polishes bullets with STAR flavor and impact, keeping them truthful.
+ */
+router.post("/work-details", async (req, res) => {
+  const { rawText, language = "en" } = req.body || {};
+
+  if (!rawText || typeof rawText !== "string") {
+    return res.status(400).json({ error: "rawText (string) is required" });
+  }
+
+  if (rawText.length > 8000) {
+    return res.status(400).json({
+      error: "rawText text is too long. Maximum allowed is 8,000 characters.",
+    });
+  }
+
+  const guard = assessCareerInput({ rawText: rawText || "" });
+  if (!guard.ok) {
+    return res.status(400).json({
+      error: guard.message,
+      reason: guard.reason,
+    });
+  }
+
+  const isTurkish = language === "tr";
+
+  // Fallback if OpenAI not available
+  if (!openai) {
+    const optimized = simpleImprovedWorkDetailsLocal(rawText, language);
+    return res.json({ optimizedText: optimized, source: "local-mock" });
+  }
+
+  try {
+    const systemPrompt = isTurkish
+      ? "Sen iş deneyimi madde madde açıklamaları konusunda uzman bir kariyer koçusun. Kullanıcının sorumluluk ve başarılarını; güçlü fiiller, ölçülebilir sonuçlar ve STAR mantığı (Durum, Görev, Aksiyon, Sonuç) ile daha profesyonel hale getirirsin. Yeni şirketler, roller veya gerçekçi olmayan başarılar UYDURMA."
+      : "You are an expert career coach for work experience bullet points. Your job is to turn the user's raw responsibilities and achievements into strong, impact-focused bullets using STAR thinking (Situation, Task, Action, Result). Do NOT invent new employers, roles, or unrealistic achievements.";
+
+    const userPrompt = `
+        Original work details (responsibilities / achievements):
+        ${rawText}
+
+        Rewrite these as strong, recruiter-friendly bullet points for a single role.
+
+        Instructions:
+        - Keep everything truthful; do NOT invent new responsibilities or achievements that are clearly not implied.
+        - Use clear, strong action verbs (e.g., led, designed, implemented, optimized).
+        - Whenever reasonably inferable, highlight:
+          - scale (users, teams, revenue, data size),
+          - improvements (speed, quality, efficiency),
+          - business impact (revenue, cost savings, satisfaction).
+        - Use concise bullets:
+          - each bullet should be 1–2 lines max,
+          - avoid repeating the same idea with different wording.
+        - Implicitly follow the STAR logic (Situation/Task, Action, Result) without labeling it.
+        - Output ONLY the improved bullet points, one per line (starting with a bullet or dash).
+        `;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.5,
+      max_tokens: 700,
+    });
+
+    const optimizedText =
+      completion.choices?.[0]?.message?.content?.trim() ||
+      simpleImprovedWorkDetailsLocal(rawText, language);
+
+    return res.json({ optimizedText, source: "openai" });
+  } catch (err) {
+    console.error("Error in /work-details:", err);
+
+    if (err?.code === "insufficient_quota" || err?.status === 429) {
+      const optimized = simpleImprovedWorkDetailsLocal(rawText, language);
+      return res.status(200).json({
+        optimizedText: optimized,
+        source: "local-fallback",
+        warning: isTurkish
+          ? "OpenAI kotası doldu, local mock kullanılıyor."
+          : "OpenAI quota exceeded, using local fallback.",
+      });
+    }
+
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+/**
+ * /edu-details
+ * - Treats rawText as education-related details (modules, thesis, honors, activities).
+ * - Turns it into crisp bullet-style highlights.
+ */
+router.post("/edu-details", async (req, res) => {
+  const { rawText, language = "en" } = req.body || {};
+
+  if (!rawText || typeof rawText !== "string") {
+    return res.status(400).json({ error: "rawText (string) is required" });
+  }
+
+  if (rawText.length > 8000) {
+    return res.status(400).json({
+      error: "rawText text is too long. Maximum allowed is 8,000 characters.",
+    });
+  }
+
+  const guard = assessCareerInput({ rawText: rawText || "" });
+  if (!guard.ok) {
+    return res.status(400).json({
+      error: guard.message,
+      reason: guard.reason,
+    });
+  }
+
+  const isTurkish = language === "tr";
+
+  if (!openai) {
+    const optimized = simpleImprovedEduDetailsLocal(rawText, language);
+    return res.json({ optimizedText: optimized, source: "local-mock" });
+  }
+
+  try {
+    const systemPrompt = isTurkish
+      ? "Sen eğitim detayları (dersler, projeler, tez, onur dereceleri, kulüp faaliyetleri) konusunda uzman bir kariyer koçusun. Görevin, bu bilgileri; işe alımcılar için okunabilir, öz ve role uygun madde madde vurgulara dönüştürmektir. Yeni dereceler, kurumlar veya gerçek dışı başarılar UYDURMA."
+      : "You are an expert career coach for education and academic details (coursework, projects, thesis, honors, activities). Your job is to turn the user's raw notes into crisp, role-relevant bullet points that recruiters can quickly scan. Do NOT invent new degrees, institutions, or unrealistic achievements.";
+
+    const userPrompt = `
+        Original education details:
+        ${rawText}
+
+        Rewrite this as a clean Education details section.
+
+        Instructions:
+        - Keep everything truthful; do NOT invent new degrees, institutions, or honors.
+        - Group and rewrite the content into bullet points that highlight:
+          - key coursework (only if relevant to target roles),
+          - major projects or thesis topics,
+          - honors, scholarships, academic awards,
+          - leadership positions or impactful student activities.
+        - Prefer concise, 1-line bullets that start with an action or clear label.
+        - Avoid over-explaining; focus on what adds employer-facing value.
+        - Output ONLY the improved bullets / short lines, ready to paste under an Education entry.
+        `;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.5,
+      max_tokens: 700,
+    });
+
+    const optimizedText =
+      completion.choices?.[0]?.message?.content?.trim() ||
+      simpleImprovedEduDetailsLocal(rawText, language);
+
+    return res.json({ optimizedText, source: "openai" });
+  } catch (err) {
+    console.error("Error in /edu-details:", err);
+
+    if (err?.code === "insufficient_quota" || err?.status === 429) {
+      const optimized = simpleImprovedEduDetailsLocal(rawText, language);
       return res.status(200).json({
         optimizedText: optimized,
         source: "local-fallback",

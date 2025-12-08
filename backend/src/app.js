@@ -39,6 +39,8 @@ app.use("/skills", aiLimiter);
 app.use("/projects", aiLimiter);
 app.use("/expertise", aiLimiter);
 app.use("/publishes", aiLimiter);
+app.use("/work-details", aiLimiter);
+app.use("/edu-details", aiLimiter);
 
 // Health check
 app.get("/", (req, res) => {

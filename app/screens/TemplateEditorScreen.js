@@ -2,7 +2,7 @@
 import React, { useContext, useMemo, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Modal, } from "react-native";
 import { AppContext, saveDocument } from "../context/AppContext";
-import { improveAboutMe, improveSkillsSection, improveProjectsSection, improveExpertiseSection, improvePublishesSection } from "../utils/api";
+import { improveAboutMe, improveSkillsSection, improveProjectsSection, improveExpertiseSection, improvePublishesSection, improveExperienceDetails, improveEducationDetails } from "../utils/api";
 
 const BASE_FIELDS = [
   {
@@ -473,6 +473,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
       savedValue: "",
     }))
   );
+
   const [loadingFieldKey, setLoadingFieldKey] = useState(null);
   const [savingDoc, setSavingDoc] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -492,6 +493,8 @@ export default function TemplateEditorScreen({ route, navigation }) {
     projects: improveProjectsSection,
     expertise: improveExpertiseSection,
     publishes: improvePublishesSection,
+    experience_details: improveExperienceDetails,
+    education_details: improveEducationDetails,
   };
 
   const checkPaywall = () => {
@@ -613,53 +616,46 @@ export default function TemplateEditorScreen({ route, navigation }) {
     }));
   };
 
-  const handleModalAi = async () => {
-    if (!activeModalField) return;
-    const config = MODAL_CONFIGS[activeModalField];
-    if (!config) return;
+  const handleModalAi = async (field) => {
+    if (typeof checkPaywall === "function") {
+      if (!checkPaywall()) return;
+    }
+    const rawText = modalData.details;
+    if (!rawText.trim()) {
+      Alert.alert( language === "tr" ? "Uyarı" : "Warning", language === "tr" ? "Lütfen metninizi girin." : "Please input text first.");
+      return;
+    }
+
+    if (rawText.length > AI_CHAR_LIMIT) {
+      Alert.alert(
+        language === "tr" ? "Metin çok uzun" : "Text too long",
+        language === "tr"
+          ? `Maksimum ${AI_CHAR_LIMIT} karaktere kadar destekleniyor.`
+          : `Maximum supported length is ${AI_CHAR_LIMIT} characters.`
+      );
+      return;
+    }
+
+    const apiFn = AI_API_BY_FIELD[field.aiSectionKey];
+    if (!apiFn) { 
+      Alert.alert( "AI Not Configured", `AI is not configured for field "${field.aiSectionKey}".` );
+      return;
+    }
 
     try {
-      const body = {
-        sectionKey: config.aiSectionKey,
-        currentText: modalData.details,
-        templateId,
-        templateName,
-        meta: {
-          company: modalData.company,
-          title: modalData.title,
-          institution: modalData.institution,
-          degree: modalData.degree,
-        },
-      };
+      setLoadingModalAi(true);
+      const data = await apiFn({ rawText, language, });
 
-      const response = await fetch(
-        "https://resume-iq-2p17.onrender.com/api/editor/section",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("AI suggestion failed");
+      if (!data || !data.optimizedText) {
+        throw new Error("Missing optimizedText in response");
       }
 
-      const data = await response.json();
-      const aiText = data.text || data.result || "";
-
-      if (!aiText) {
-        Alert.alert(
-          "No suggestion",
-          "AI could not generate a suggestion for this section."
-        );
-        return;
-      }
-      
       setModalData((prev) => ({
         ...prev,
-        details: aiText,
+        details: data.optimizedText,
       }));
+
+      setLoadingModalAi(false);
     } catch (e) {
       console.log("modal AI error", e);
       Alert.alert(
@@ -1165,7 +1161,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
                       <Text style={[ styles.fieldLabel, { color: theme.textPrimary }, ]} >
                         Details / Highlights
                       </Text>
-                      <TouchableOpacity style={[ styles.aiButton, { borderColor: theme.accent, marginLeft: "auto", }, ]} onPress={handleModalAi} disabled={loadingModalAi} >
+                      <TouchableOpacity style={[ styles.aiButton, { borderColor: theme.accent, marginLeft: "auto", }, ]} onPress={() => handleModalAi(config)} disabled={loadingModalAi} >
                         {loadingModalAi ? (
                           <ActivityIndicator size="small" />) : (
                           <Text style={[ styles.aiButtonText, { color: theme.accent }, ]} >

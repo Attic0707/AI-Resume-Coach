@@ -617,6 +617,126 @@ function simpleImprovedPublishesLocal(publishesText, language) {
   return header + body + hints;
 }
 
+/**
+ * Local mock for Work Details section
+ * Takes raw bullet-style responsibilities/achievements and lightly polishes them.
+ */
+function simpleImprovedWorkDetailsLocal(workDetailsText, language) {
+  const isTurkish = language === "tr";
+  const base = (workDetailsText || "").trim();
+
+  const header = isTurkish
+    ? "İş sorumlulukları ve başarılar bölümü (local mock ile hafifçe güçlendirildi):\n\n"
+    : "Work responsibilities & achievements section (lightly strengthened via local mock):\n\n";
+
+  if (!base) {
+    return (
+      header +
+      (isTurkish
+        ? "Metin boş görünüyor. Lütfen bu pozisyondaki görevlerini ve elde ettiğin sonuçları madde madde yaz."
+        : "The text seems empty. Please provide your responsibilities and achievements in this role as bullet-style lines.")
+    );
+  }
+
+  const lines = base
+    .split(/\n+/g)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const improvedLines = lines.map((line) => {
+    let tweaked = line;
+
+    if (!isTurkish) {
+      tweaked = tweaked.replace(/\bresponsible for\b/gi, "led");
+      tweaked = tweaked.replace(/\bhelped\b/gi, "contributed to");
+      tweaked = tweaked.replace(/\bworked on\b/gi, "delivered on");
+    } else {
+      tweaked = tweaked.replace(/\bsorumluydum\b/gi, "liderlik ettim");
+      tweaked = tweaked.replace(/\bsorumluydum\./gi, "liderlik ettim.");
+      tweaked = tweaked.replace(/\byardımcı oldum\b/gi, "katkı sağladım");
+      tweaked = tweaked.replace(/\büzerinde çalıştım\b/gi, "teslim ettim");
+    }
+
+    // Ensure bullet
+    if (/^[•\-]/.test(tweaked)) {
+      return tweaked;
+    }
+    return "• " + tweaked;
+  });
+
+  const body = improvedLines.join("\n");
+
+  const hints =
+    (isTurkish ? "\n\nNotlar:\n" : "\n\nNotes:\n") +
+    (isTurkish
+      ? "• Her maddeyi güçlü bir fiille başlat (örn. 'tasarladım', 'optimize ettim', 'yönettim').\n" +
+        "• Mümkün olduğunda somut metrikler ekle (örn. '%20 performans artışı', 'yanıt sürelerinde 2x iyileşme').\n" +
+        "• Sadece görev değil, sonuç ve etkiyi de vurgula (müşteri memnuniyeti, gelir artışı, hata oranı vb.)."
+      : "• Start each bullet with a strong verb (e.g., 'designed', 'optimized', 'led').\n" +
+        "• Add concrete metrics wherever possible (e.g., '20% performance improvement', '2x faster response time').\n" +
+        "• Emphasize impact, not just tasks (customer satisfaction, revenue, quality, speed).");
+
+  return header + body + hints;
+}
+
+/**
+ * Local mock for Education Details section
+ * Turns messy notes about education into clearer bullet-style highlights.
+ */
+function simpleImprovedEduDetailsLocal(eduDetailsText, language) {
+  const isTurkish = language === "tr";
+  const base = (eduDetailsText || "").trim();
+
+  const header = isTurkish
+    ? "Eğitim detayları bölümü (local mock ile hafifçe yapılandırıldı):\n\n"
+    : "Education details section (lightly structured via local mock):\n\n";
+
+  if (!base) {
+    return (
+      header +
+      (isTurkish
+        ? "Metin boş görünüyor. Lütfen önemli dersler, projeler, tez, onur dereceleri veya kulüp faaliyetlerini ekle."
+        : "The text seems empty. Please add key coursework, projects, thesis, honors, or relevant extracurriculars.")
+    );
+  }
+
+  const lines = base
+    .split(/\n+/g)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const improvedLines = lines.map((line) => {
+    let tweaked = line;
+
+    if (!isTurkish) {
+      tweaked = tweaked.replace(/\bgot\b/gi, "earned");
+      tweaked = tweaked.replace(/\bfinished\b/gi, "completed");
+    } else {
+      tweaked = tweaked.replace(/\bbitirdim\b/gi, "tamamladım");
+      tweaked = tweaked.replace(/\baldım\b/gi, "tamamladım");
+    }
+
+    if (/^[•\-]/.test(tweaked)) {
+      return tweaked;
+    }
+    return "• " + tweaked;
+  });
+
+  const body = improvedLines.join("\n");
+
+  const hints =
+    (isTurkish ? "\n\nNotlar:\n" : "\n\nNotes:\n") +
+    (isTurkish
+      ? "• İlgili dersler ve projeleri, hedeflediğin rolle en alakalı olacak şekilde seç.\n" +
+        "• Not ortalaması (GPA), onur dereceleri veya burslar gibi güçlü göstergeleri eklemeyi düşün.\n" +
+        "• Kulüp ve topluluk faaliyetlerini, somut sorumluluk ve katkılarla birlikte yaz."
+      : "• Select coursework and projects that are most relevant to your target roles.\n" +
+        "• Consider including GPA, honors, or scholarships if they strengthen your profile.\n" +
+        "• For clubs and student activities, mention concrete responsibilities and impact.");
+
+  return header + body + hints;
+}
+
 module.exports = {
   simpleLocalOptimize,
   simpleJobMatchLocal,
@@ -631,4 +751,6 @@ module.exports = {
   simpleImprovedProjectsLocal,
   simpleImprovedExpertiseLocal,
   simpleImprovedPublishesLocal,
+  simpleImprovedWorkDetailsLocal,
+  simpleImprovedEduDetailsLocal
 };
