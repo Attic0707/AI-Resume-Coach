@@ -147,7 +147,7 @@ router.post("/skills", async (req, res) => {
   const isTurkish = language === "tr";
 
   if (!openai) {
-    const optimized = simpleImprovedAboutMeLocal(rawText, language);
+    const optimized = simpleImprovedSkillsLocal(rawText, language);
     return res.json({ optimizedText: optimized, source: "local-mock" });
   }
 
@@ -189,14 +189,14 @@ router.post("/skills", async (req, res) => {
 
     const optimizedText =
       completion.choices?.[0]?.message?.content?.trim() ||
-      simpleImprovedAboutMeLocal(rawText, language);
+      simpleImprovedSkillsLocal(rawText, language);
 
     return res.json({ optimizedText, source: "openai" });
   } catch (err) {
     console.error("Error in /skills:", err);
 
     if (err?.code === "insufficient_quota" || err?.status === 429) {
-      const optimized = simpleImprovedAboutMeLocal(rawText, language);
+      const optimized = simpleImprovedSkillsLocal(rawText, language);
       return res.status(200).json({
         optimizedText: optimized,
         source: "local-fallback",
@@ -239,7 +239,7 @@ router.post("/projects", async (req, res) => {
   const isTurkish = language === "tr";
 
   if (!openai) {
-    const optimized = simpleImprovedAboutMeLocal(rawText, language);
+    const optimized = simpleImprovedProjectsLocal(rawText, language);
     return res.json({ optimizedText: optimized, source: "local-mock" });
   }
 
@@ -283,14 +283,14 @@ router.post("/projects", async (req, res) => {
 
     const optimizedText =
       completion.choices?.[0]?.message?.content?.trim() ||
-      simpleImprovedAboutMeLocal(rawText, language);
+      simpleImprovedProjectsLocal(rawText, language);
 
     return res.json({ optimizedText, source: "openai" });
   } catch (err) {
     console.error("Error in /projects:", err);
 
     if (err?.code === "insufficient_quota" || err?.status === 429) {
-      const optimized = simpleImprovedAboutMeLocal(rawText, language);
+      const optimized = simpleImprovedProjectsLocal(rawText, language);
       return res.status(200).json({
         optimizedText: optimized,
         source: "local-fallback",
@@ -333,7 +333,7 @@ router.post("/expertise", async (req, res) => {
   const isTurkish = language === "tr";
 
   if (!openai) {
-    const optimized = simpleImprovedAboutMeLocal(rawText, language);
+    const optimized = simpleImprovedExpertiseLocal(rawText, language);
     return res.json({ optimizedText: optimized, source: "local-mock" });
   }
 
@@ -370,14 +370,14 @@ router.post("/expertise", async (req, res) => {
 
     const optimizedText =
       completion.choices?.[0]?.message?.content?.trim() ||
-      simpleImprovedAboutMeLocal(rawText, language);
+      simpleImprovedExpertiseLocal(rawText, language);
 
     return res.json({ optimizedText, source: "openai" });
   } catch (err) {
     console.error("Error in /expertise:", err);
 
     if (err?.code === "insufficient_quota" || err?.status === 429) {
-      const optimized = simpleImprovedAboutMeLocal(rawText, language);
+      const optimized = simpleImprovedExpertiseLocal(rawText, language);
       return res.status(200).json({
         optimizedText: optimized,
         source: "local-fallback",
@@ -420,7 +420,7 @@ router.post("/publishes", async (req, res) => {
   const isTurkish = language === "tr";
 
   if (!openai) {
-    const optimized = simpleImprovedAboutMeLocal(rawText, language);
+    const optimized = simpleImprovedPublishesLocal(rawText, language);
     return res.json({ optimizedText: optimized, source: "local-mock" });
   }
 
@@ -464,14 +464,14 @@ router.post("/publishes", async (req, res) => {
 
     const optimizedText =
       completion.choices?.[0]?.message?.content?.trim() ||
-      simpleImprovedAboutMeLocal(rawText, language);
+      simpleImprovedPublishesLocal(rawText, language);
 
     return res.json({ optimizedText, source: "openai" });
   } catch (err) {
     console.error("Error in /publishes:", err);
 
     if (err?.code === "insufficient_quota" || err?.status === 429) {
-      const optimized = simpleImprovedAboutMeLocal(rawText, language);
+      const optimized = simpleImprovedPublishesLocal(rawText, language);
       return res.status(200).json({
         optimizedText: optimized,
         source: "local-fallback",

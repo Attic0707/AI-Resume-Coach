@@ -315,7 +315,7 @@ function simpleLinkedInOptimizeLocal(linkedInText, sectionType = "about", target
   return header + improved + hints;
 }
 
-function simpleImprovedAboutMeLocal(aboutmeText, language = "en") {
+function simpleImprovedAboutMeLocal(aboutmeText, language) {
   const isTurkish = language === "tr";
   const base = (aboutmeText || "").trim();
 
@@ -372,6 +372,251 @@ function simpleImprovedAboutMeLocal(aboutmeText, language = "en") {
   return header + improved + hints;
 }
 
+/**
+ * Local mock for Skills section
+ */
+function simpleImprovedSkillsLocal(skillsText, language) {
+  const isTurkish = language === "tr";
+  const base = (skillsText || "").trim();
+
+  const header = isTurkish
+    ? "Yetenekler bölümü (local mock ile hafifçe düzenlendi):\n\n"
+    : "Skills section (lightly improved via local mock):\n\n";
+
+  if (!base) {
+    return (
+      header +
+      (isTurkish
+        ? "Metin boş görünüyor. Lütfen teknik ve iş becerilerini virgülle veya satır satır ekle."
+        : "The text seems empty. Please provide your technical and business skills as comma-separated or line-separated text.")
+    );
+  }
+
+  // Split into items (commas / newlines / bullets), trim & dedupe
+  const rawItems = base
+    .split(/[\n,;•]+/g)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const seen = new Set();
+  const items = [];
+  for (const it of rawItems) {
+    const key = it.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      items.push(it);
+    }
+  }
+
+  // Light normalization (capitalize first letter, keep acronyms)
+  const normalized = items.map((item) => {
+    if (!item) return item;
+    if (item.toUpperCase() === item) return item; // ACRONYM like SQL, REST
+    return item.charAt(0).toUpperCase() + item.slice(1);
+  });
+
+  const body = isTurkish
+    ? "• " + normalized.join("\n• ")
+    : "• " + normalized.join("\n• ");
+
+  const hints =
+    (isTurkish ? "\n\nNotlar:\n" : "\n\nNotes:\n") +
+    (isTurkish
+      ? "• En güçlü ve başvurduğun role en uygun becerileri en üste yaz.\n" +
+        "• Aynı anlama gelen tekrarları sadeleştir (örn. 'MS Excel' ve 'Excel' → tek satır).\n" +
+        "• Teknik beceriler, araçlar ve iş becerileri arasında doğal bir denge kur."
+      : "• Put your strongest, most role-relevant skills at the top.\n" +
+        "• Merge duplicates that mean the same thing (e.g., 'MS Excel' and 'Excel' → one entry).\n" +
+        "• Balance technical skills, tools, and business/soft skills.");
+
+  return header + body + hints;
+}
+
+/**
+ * Local mock for Projects section
+ * Pretends we took raw project blurbs and turned them into bullet-style, impact-focused lines.
+ */
+function simpleImprovedProjectsLocal(projectsText, language) {
+  const isTurkish = language === "tr";
+  const base = (projectsText || "").trim();
+
+  const header = isTurkish
+    ? "Projeler bölümü (local mock ile hafifçe yapılandırıldı):\n\n"
+    : "Projects section (lightly structured via local mock):\n\n";
+
+  if (!base) {
+    return (
+      header +
+      (isTurkish
+        ? "Metin boş görünüyor. Lütfen üzerinde çalıştığın 1–3 önemli projeyi, her biri için 1–2 cümle olacak şekilde ekle."
+        : "The text seems empty. Please provide 1–3 key projects with 1–2 sentences for each.")
+    );
+  }
+
+  // Rough split by blank lines or new lines; treat each non-empty chunk as one project
+  const lines = base
+    .split(/\n+/g)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  // Convert each line into a bullet-like project highlight
+  const improvedLines = lines.map((line) => {
+    // Add a tiny nudge of “impact language” without changing content
+    let tweaked = line;
+    if (!isTurkish) {
+      tweaked = tweaked.replace(/\bworked on\b/gi, "delivered");
+      tweaked = tweaked.replace(/\bhelped\b/gi, "contributed to");
+    } else {
+      tweaked = tweaked.replace(/\büzerinde çalıştım\b/gi, "teslim ettim");
+      tweaked = tweaked.replace(/\byardımcı oldum\b/gi, "katkı sağladım");
+    }
+
+    if (/^[•\-]/.test(tweaked)) {
+      return tweaked; // already looks like a bullet
+    }
+    return "• " + tweaked;
+  });
+
+  const body = improvedLines.join("\n");
+
+  const hints =
+    (isTurkish ? "\n\nNotlar:\n" : "\n\nNotes:\n") +
+    (isTurkish
+      ? "• Her proje için rolünü (örn. tek geliştirici, lead, ekip üyesi) netleştirmeye çalış.\n" +
+        "• Kullanılan önemli teknolojileri ve elde edilen iş sonuçlarını (kullanıcı sayısı, performans artışı vb.) ekle.\n" +
+        "• En güncel ve hedef role en yakın projeleri en üste taşı."
+      : "• For each project, try to clarify your role (e.g., sole developer, lead, team member).\n" +
+        "• Add key technologies and outcomes where you can (user adoption, performance improvements, revenue impact).\n" +
+        "• Put the most recent and most role-relevant projects at the top.");
+
+  return header + body + hints;
+}
+
+/**
+ * Local mock for Expertise section
+ * Turns a messy list into a tight “Areas of Expertise” style list.
+ */
+function simpleImprovedExpertiseLocal(expertiseText, language) {
+  const isTurkish = language === "tr";
+  const base = (expertiseText || "").trim();
+
+  const header = isTurkish
+    ? "Uzmanlık alanları bölümü (local mock ile hafifçe düzenlendi):\n\n"
+    : "Areas of Expertise section (lightly refined via local mock):\n\n";
+
+  if (!base) {
+    return (
+      header +
+      (isTurkish
+        ? "Metin boş görünüyor. Lütfen kendini güçlü hissettiğin uzmanlık alanlarını ekle (örn. 'Kurumsal Salesforce Mimarlığı', 'Mobil Uygulama Geliştirme')."
+        : "The text seems empty. Please add the domains where you feel most confident (e.g., 'Enterprise Salesforce Architecture', 'Mobile App Development').")
+    );
+  }
+
+  const rawItems = base
+    .split(/[\n,;•]+/g)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const seen = new Set();
+  const items = [];
+  for (const it of rawItems) {
+    const key = it.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      items.push(it);
+    }
+  }
+
+  const normalized = items.map((item) => {
+    if (!item) return item;
+    if (item.toUpperCase() === item) return item;
+    // light title case: first letter of each word
+    return item
+      .split(/\s+/)
+      .map((w) =>
+        w.length === 0
+          ? w
+          : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+      )
+      .join(" ");
+  });
+
+  const body = isTurkish
+    ? "• " + normalized.join("\n• ")
+    : "• " + normalized.join("\n• ");
+
+  const hints =
+    (isTurkish ? "\n\nNotlar:\n" : "\n\nNotes:\n") +
+    (isTurkish
+      ? "• 6–14 arası net ve iş dünyasında karşılığı olan uzmanlık alanı seçmeye çalış.\n" +
+        "• Çok genel ifadeleri (örn. 'Problem çözme') mümkünse daha somut alanlarla birleştir.\n" +
+        "• Hedeflediğin rol(ler) ile en alakalı uzmanlıkları ilk sıralara yaz."
+      : "• Aim for 6–14 clear, employer-relevant areas of expertise.\n" +
+        "• Merge overly generic items (e.g., 'Problem Solving') into more concrete domains where possible.\n" +
+        "• Put the expertise areas most relevant to your target roles at the top.");
+
+  return header + body + hints;
+}
+
+/**
+ * Local mock for Publications / Rewards (Awards) section
+ * Presents them as a credible bullet list.
+ */
+function simpleImprovedPublishesLocal(publishesText, language) {
+  const isTurkish = language === "tr";
+  const base = (publishesText || "").trim();
+
+  const header = isTurkish
+    ? "Yayınlar ve ödüller bölümü (local mock ile hafifçe yapılandırıldı):\n\n"
+    : "Publications & Awards section (lightly structured via local mock):\n\n";
+
+  if (!base) {
+    return (
+      header +
+      (isTurkish
+        ? "Metin boş görünüyor. Lütfen önemli gördüğün yayınlarını, konuşmalarını veya kariyerle ilgili ödüllerini ekle."
+        : "The text seems empty. Please add any important publications, talks, or career-relevant awards.")
+    );
+  }
+
+  const lines = base
+    .split(/\n+/g)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const improvedLines = lines.map((line) => {
+    let tweaked = line;
+
+    if (!isTurkish) {
+      tweaked = tweaked.replace(/\bgot\b/gi, "received");
+      tweaked = tweaked.replace(/\bwon\b/gi, "was awarded");
+    } else {
+      tweaked = tweaked.replace(/\baldım\b/gi, "ile ödüllendirildim");
+      tweaked = tweaked.replace(/\bkazandım\b/gi, "ödülüne layık görüldüm");
+    }
+
+    if (/^[•\-]/.test(tweaked)) {
+      return tweaked;
+    }
+    return "• " + tweaked;
+  });
+
+  const body = improvedLines.join("\n");
+
+  const hints =
+    (isTurkish ? "\n\nNotlar:\n" : "\n\nNotes:\n") +
+    (isTurkish
+      ? "• Her bir madde için mümkünse; eser/ödül adı, kurum/etkinlik ve yılı belirt.\n" +
+        "• Hedeflediğin kariyer alanıyla en ilgili yayın ve ödülleri en üste yerleştir.\n" +
+        "• Akademik olmayan ama kariyere katkı sunan ödülleri de (örn. şirket içi başarı ödülleri) ekleyebilirsin."
+      : "• For each item, include where possible: title/name, venue/organization, and year.\n" +
+        "• Put the publications and awards that are most relevant to your target career path at the top.\n" +
+        "• It’s okay to include non-academic but career-relevant awards (e.g., internal company performance awards).");
+
+  return header + body + hints;
+}
+
 module.exports = {
   simpleLocalOptimize,
   simpleJobMatchLocal,
@@ -382,4 +627,8 @@ module.exports = {
   simpleJobAnalysisLocal,
   simpleLinkedInOptimizeLocal,
   simpleImprovedAboutMeLocal,
+  simpleImprovedSkillsLocal,
+  simpleImprovedProjectsLocal,
+  simpleImprovedExpertiseLocal,
+  simpleImprovedPublishesLocal,
 };
