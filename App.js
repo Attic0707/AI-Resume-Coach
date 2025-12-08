@@ -14,6 +14,7 @@ import MyDocumentsScreen from "./app/screens/MyDocumentsScreen";
 import UpgradeScreen from "./app/screens/UpgradeScreen";
 
 import TemplateEditorScreen from "./app/screens/TemplateEditorScreen";
+import ResumeEditorScreen from "./app/screens/ResumeEditorScreen";
 
 import OptimizeResumeScreen from "./app/screens/OptimizeResumeScreen";
 import JobMatchScreen from "./app/screens/JobMatchScreen";
