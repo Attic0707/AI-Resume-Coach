@@ -107,7 +107,7 @@ export function AppProvider({ children }) {
       setLanguage,
       toggleLanguage,
     }),
-    [theme, themeName, isPro, freeCreditsLeft]
+    [theme, themeName, isPro, freeCreditsLeft, language]
   );
 
   return (

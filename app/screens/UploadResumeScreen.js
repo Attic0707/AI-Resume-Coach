@@ -12,9 +12,11 @@ import * as DocumentPicker from "expo-document-picker";
 import { AppContext } from "../context/AppContext";
 
 export default function UploadResumeScreen({ navigation }) {
-  const { theme } = useContext(AppContext);
+  const { theme, language } = useContext(AppContext);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+
+  const isTurkish = language === "tr";
 
   const pickFile = async () => {
     try {
@@ -38,13 +40,23 @@ export default function UploadResumeScreen({ navigation }) {
       setFile(picked);
     } catch (e) {
       console.log("file pick error", e);
-      Alert.alert("Error", "Could not open the file picker.");
+      Alert.alert(
+        isTurkish ? "Hata" : "Error",
+        isTurkish
+          ? "Dosya seçici açılamadı."
+          : "Could not open the file picker."
+      );
     }
   };
 
   const uploadFile = async () => {
     if (!file) {
-      Alert.alert("No file", "Please select a resume file first.");
+      Alert.alert(
+        isTurkish ? "Dosya yok" : "No file",
+        isTurkish
+          ? "Lütfen önce bir CV dosyası seçin."
+          : "Please select a resume file first."
+      );
       return;
     }
 
@@ -55,9 +67,7 @@ export default function UploadResumeScreen({ navigation }) {
       formData.append("file", {
         uri: file.uri,
         name: file.name || "resume.pdf",
-        type:
-          file.mimeType ||
-          "application/octet-stream",
+        type: file.mimeType || "application/octet-stream",
       });
 
       const response = await fetch(
@@ -65,8 +75,7 @@ export default function UploadResumeScreen({ navigation }) {
         {
           method: "POST",
           headers: {
-            // DO NOT set Content-Type here, let fetch set the correct multipart boundary
-            // "Content-Type": "multipart/form-data",
+            // Let fetch set multipart boundary
           },
           body: formData,
         }
@@ -78,88 +87,200 @@ export default function UploadResumeScreen({ navigation }) {
       }
 
       const data = await response.json();
-      // Expected structure from backend:
-      // { title, sections: [{ key, label, value }], meta?: {...} }
+      // Expected: { title, sections: [{ key, label, value }], meta?: {...} }
 
       if (!data.sections || !Array.isArray(data.sections)) {
         throw new Error("Invalid response from server");
       }
 
-      // Navigate to editor with parsed data
       navigation.replace("ResumeEditor", {
         mode: "upload",
         initialTitle: data.title || "Imported Resume",
         initialSections: data.sections,
         sourceFileName: file.name,
+        meta: data.meta || null,
       });
     } catch (e) {
       console.log("upload error", e);
       Alert.alert(
-        "Upload failed",
-        "We couldn't process this file. Please try a different PDF/DOCX or try again later."
+        isTurkish ? "Yükleme başarısız" : "Upload failed",
+        isTurkish
+          ? "Bu dosyayı işleyemedik. Lütfen başka bir PDF/DOCX deneyin veya daha sonra tekrar deneyin."
+          : "We couldn't process this file. Please try a different PDF/DOCX or try again later."
       );
     } finally {
       setUploading(false);
     }
   };
 
+  const canSubmit = !!file && !uploading;
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      {/* Header */}
       <View style={styles.headerRow}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>
-          Upload Resume
+        <Text
+          style={[
+            styles.headerTitle,
+            { color: theme.textPrimary },
+          ]}
+        >
+          {isTurkish ? "CV Yükle" : "Upload Resume"}
         </Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <Text style={[styles.subtitle, { color: theme.mutedText }]}>
-        Upload a PDF or Word file. We’ll analyze it and convert it into editable
-        sections in the editor.
-      </Text>
-
-      <TouchableOpacity
+      {/* Context card */}
+      <View
         style={[
-          styles.selectButton,
+          styles.contextCard,
           {
+            backgroundColor: theme.bgCard,
             borderColor: theme.border,
-            backgroundColor: theme.cardBackgroundSoft,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.contextTitle,
+            { color: theme.textPrimary },
+          ]}
+        >
+          {isTurkish
+            ? "PDF / Word dosyanı içeriye çeviriyoruz"
+            : "Turn your PDF / Word into editable sections"}
+        </Text>
+        <Text
+          style={[
+            styles.contextSubtitle,
+            { color: theme.textSecondary },
+          ]}
+        >
+          {isTurkish
+            ? "CV’ni yükle, biz de deneyim, eğitim, beceriler gibi bölümlere ayırıp düzenlenebilir hale getirelim."
+            : "Upload your resume and we’ll break it into Experience, Education, Skills and other sections you can edit and improve with AI."}
+        </Text>
+      </View>
+
+      {/* File selection card */}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={[
+          styles.selectCard,
+          {
+            backgroundColor: theme.bgCard,
+            borderColor: theme.border,
           },
         ]}
         onPress={pickFile}
       >
-        <Text style={[styles.selectText, { color: theme.text }]}>
-          {file ? "Change file" : "Choose file"}
-        </Text>
-        {file && (
-          <Text style={[styles.fileName, { color: theme.mutedText }]}>
-            {file.name}
+        <View style={styles.selectHeaderRow}>
+          <Text
+            style={[
+              styles.selectTitle,
+              { color: theme.textPrimary },
+            ]}
+          >
+            {file
+              ? isTurkish
+                ? "Dosyayı değiştir"
+                : "Change file"
+              : isTurkish
+              ? "Dosya seç"
+              : "Choose file"}
           </Text>
-        )}
+          <Text style={{ fontSize: 22 }}>📄</Text>
+        </View>
+
+        <Text
+          style={[
+            styles.selectSubtitle,
+            { color: theme.textSecondary },
+          ]}
+        >
+          {isTurkish
+            ? "Desteklenen formatlar: PDF, DOCX, DOC"
+            : "Supported formats: PDF, DOCX, DOC"}
+        </Text>
+
+        {file ? (
+          <View style={styles.filePill}>
+            <Text
+              style={[
+                styles.fileName,
+                { color: theme.textPrimary },
+              ]}
+              numberOfLines={1}
+            >
+              {file.name}
+            </Text>
+          </View>
+        ) : null}
       </TouchableOpacity>
 
-      <View style={styles.hintBox}>
-        <Text style={[styles.hintTitle, { color: theme.text }]}>
-          Tips for best results
+      {/* Tips box */}
+      <View
+        style={[
+          styles.hintBox,
+          { borderColor: theme.border },
+        ]}
+      >
+        <Text
+          style={[
+            styles.hintTitle,
+            { color: theme.textPrimary },
+          ]}
+        >
+          {isTurkish ? "En iyi sonuçlar için" : "Tips for best results"}
         </Text>
-        <Text style={[styles.hintText, { color: theme.mutedText }]}>
-          • Use a text-based PDF or DOCX (not a scanned image).
+        <Text
+          style={[
+            styles.hintText,
+            { color: theme.textSecondary },
+          ]}
+        >
+          •{" "}
+          {isTurkish
+            ? "Metin tabanlı PDF veya DOCX kullan (tarama görüntüsü olmasın)."
+            : "Use a text-based PDF or DOCX (not a scanned image)."}
         </Text>
-        <Text style={[styles.hintText, { color: theme.mutedText }]}>
-          • Make sure your sections are labeled like “Experience”, “Education”,
-          etc.
+        <Text
+          style={[
+            styles.hintText,
+            { color: theme.textSecondary },
+          ]}
+        >
+          •{" "}
+          {isTurkish
+            ? 'Bölümleri "Experience", "Education", "Skills" gibi başlıklarla ayırmaya çalış.'
+            : 'Make sure your sections are labeled like “Experience”, “Education”, “Skills”, etc.'}
+        </Text>
+        <Text
+          style={[
+            styles.hintText,
+            { color: theme.textSecondary },
+          ]}
+        >
+          •{" "}
+          {isTurkish
+            ? "Dosya yüklendikten sonra tüm alanları düzenleyebilir ve AI ile iyileştirebilirsin."
+            : "After upload, you can edit every section and enhance it with AI."}
         </Text>
       </View>
 
+      {/* Footer */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={[
             styles.uploadButton,
             {
-              backgroundColor: file ? theme.accent : theme.disabled,
+              backgroundColor: canSubmit
+                ? theme.accent
+                : theme.border,
               opacity: uploading ? 0.7 : 1,
             },
           ]}
-          disabled={!file || uploading}
+          disabled={!canSubmit}
           onPress={uploadFile}
         >
           {uploading ? (
@@ -171,7 +292,9 @@ export default function UploadResumeScreen({ navigation }) {
                 { color: theme.textOnAccent },
               ]}
             >
-              Upload & Continue
+              {isTurkish
+                ? "Yükle ve Devam Et"
+                : "Upload & Continue"}
             </Text>
           )}
         </TouchableOpacity>
@@ -181,43 +304,74 @@ export default function UploadResumeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 20, paddingTop: 52 },
+  container: { flex: 1, paddingHorizontal: 16, paddingTop: 52 },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
   },
-  backText: { fontSize: 14 },
   headerTitle: { fontSize: 18, fontWeight: "600" },
-  subtitle: { fontSize: 13, marginBottom: 24 },
-  selectButton: {
+
+  // Context card
+  contextCard: {
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderRadius: 14,
-    padding: 16,
+  },
+  contextTitle: { fontSize: 15, fontWeight: "600", marginBottom: 4 },
+  contextSubtitle: { fontSize: 12, lineHeight: 18 },
+
+  // File selection card
+  selectCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
     marginBottom: 12,
   },
-  selectText: { fontSize: 15, fontWeight: "500", marginBottom: 6 },
+  selectHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  selectTitle: { fontSize: 15, fontWeight: "600" },
+  selectSubtitle: { fontSize: 12, marginBottom: 8 },
+  filePill: {
+    marginTop: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.5)",
+    alignSelf: "flex-start",
+    maxWidth: "100%",
+  },
   fileName: { fontSize: 12 },
+
+  // Tips box
   hintBox: {
-    marginTop: 8,
+    marginTop: 4,
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(148,163,184,0.4)",
   },
   hintTitle: { fontSize: 13, fontWeight: "600", marginBottom: 4 },
-  hintText: { fontSize: 12 },
+  hintText: { fontSize: 12, marginBottom: 2 },
+
+  // Footer
   footer: {
     position: "absolute",
-    left: 20,
-    right: 20,
+    left: 16,
+    right: 16,
     bottom: 24,
   },
   uploadButton: {
     borderRadius: 999,
     paddingVertical: 12,
     alignItems: "center",
+    justifyContent: "center",
   },
   uploadText: { fontSize: 15, fontWeight: "600" },
 });

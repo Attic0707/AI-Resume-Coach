@@ -515,11 +515,17 @@ export default function TemplateEditorScreen({ route, navigation }) {
     return {
       name: get("name"),
       headline: get("headline"),
-      aboutMe: get("aboutMe"),
+      summary: get("aboutMe"),
+      contact: get("contact"),
       experience: get("experience"),
       education: get("education"),
       skills: get("skills"),
       projects: get("projects"),
+      languages: get("languages"),
+      expertise: get("expertise"),
+      certificates: get("certificates"),
+      publishes: get("publishes"),
+      referrals: get("referrals"),
     };
   }, [fields]);
 
@@ -734,13 +740,25 @@ export default function TemplateEditorScreen({ route, navigation }) {
   };
 
   const renderPreviewContent = () => {
-    const { name, headline, aboutMe, experience, education, skills, projects } =
-      previewData;
+    const {
+      name,
+      headline,
+      summary,
+      contact,
+      experience,
+      education,
+      skills,
+      projects,
+      languages,
+      expertise,
+      certificates,
+      publishes,
+      referrals,
+    } = previewData;
 
     const mainName = name || "Your Name";
     const mainHeadline = headline || "Target Role / Headline";
 
-    // Small reusable section component
     const Section = ({ title, text, compact }) => {
       if (!text?.trim()) return null;
       return (
@@ -751,70 +769,175 @@ export default function TemplateEditorScreen({ route, navigation }) {
       );
     };
 
+    // turn comma / newline skills into chips
+    const toChips = (text = "") =>
+      text
+        .split(/[,;•\n]+/g)
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .slice(0, 16); // don’t explode the preview
+
+    const renderSkillChips = (text) => {
+      const chips = toChips(text);
+      if (!chips.length) return null;
+      return (
+        <View style={styles.pvChipWrap}>
+          {chips.map((c, idx) => (
+            <View key={idx} style={styles.pvChip}>
+              <Text style={styles.pvChipText}>{c}</Text>
+            </View>
+          ))}
+        </View>
+      );
+    };
+
+    const renderContact = () => {
+      if (!contact?.trim()) return null;
+      return (
+        <View style={styles.pvContactBlock}>
+          {contact.split("\n").map((line, idx) => (
+            <Text key={idx} style={styles.pvContactText}>
+              {line.trim()}
+            </Text>
+          ))}
+        </View>
+      );
+    };
+
     switch (templateId) {
-      // 1) CLASSIC – single column, understated
+      /**
+       * 1) CLASSIC
+       * - Single column
+       * - Clean header, simple separators
+       */
       case "classic":
         return (
           <View style={styles.pvPage}>
             <View style={styles.pvHeaderClassic}>
               <Text style={styles.pvName}>{mainName}</Text>
               <Text style={styles.pvHeadline}>{mainHeadline}</Text>
+              {renderContact()}
             </View>
 
-            <Section title="PROFILE" text={aboutMe} />
+            <Section title="PROFILE" text={summary} />
             <Section title="EXPERIENCE" text={experience} />
             <Section title="EDUCATION" text={education} />
-            <Section title="SKILLS" text={skills} />
+
+            {skills?.trim() ? (
+              <View style={styles.pvSection}>
+                <Text style={styles.pvSectionTitle}>SKILLS</Text>
+                {renderSkillChips(skills)}
+              </View>
+            ) : null}
+
             <Section title="PROJECTS" text={projects} />
+            <Section title="LANGUAGES" text={languages} />
+            <Section title="AREAS OF EXPERTISE" text={expertise} />
+            <Section title="CERTIFICATES" text={certificates} />
+            <Section title="PUBLICATIONS & AWARDS" text={publishes} />
+            <Section title="REFERRALS" text={referrals} />
           </View>
         );
 
-      // 2) TRADITIONAL – similar but more blocky with separators
+      /**
+       * 2) TRADITIONAL
+       * - Strong header, separators between blocks
+       */
       case "traditional":
         return (
           <View style={styles.pvPage}>
             <View style={styles.pvHeaderTraditional}>
               <Text style={styles.pvName}>{mainName}</Text>
               <Text style={styles.pvHeadline}>{mainHeadline}</Text>
+              {renderContact()}
             </View>
 
             <View style={styles.pvSeparator} />
-
-            <Section title="SUMMARY" text={aboutMe} />
+            <Section title="SUMMARY" text={summary} />
             <View style={styles.pvSeparatorThin} />
             <Section title="PROFESSIONAL EXPERIENCE" text={experience} />
             <View style={styles.pvSeparatorThin} />
             <Section title="EDUCATION" text={education} />
             <View style={styles.pvSeparatorThin} />
-            <Section title="SKILLS" text={skills} />
+
+            {skills?.trim() ? (
+              <>
+                <Text style={styles.pvSectionTitle}>SKILLS</Text>
+                {renderSkillChips(skills)}
+                <View style={styles.pvSeparatorThin} />
+              </>
+            ) : null}
+
             <Section title="PROJECTS" text={projects} />
+            <Section title="LANGUAGES" text={languages} />
+            <Section title="AREAS OF EXPERTISE" text={expertise} />
+            <Section title="CERTIFICATES" text={certificates} />
+            <Section title="PUBLICATIONS & AWARDS" text={publishes} />
           </View>
         );
 
-      // 3) PROFESSIONAL – strong header band + main + sidebar
+      /**
+       * 3) PROFESSIONAL
+       * - Header band
+       * - Main column + sidebar with skills / languages / expertise
+       */
       case "professional":
         return (
           <View style={styles.pvPage}>
             <View style={styles.pvHeaderBand}>
               <Text style={styles.pvNameBand}>{mainName}</Text>
               <Text style={styles.pvHeadlineBand}>{mainHeadline}</Text>
+              {renderContact()}
             </View>
 
             <View style={styles.pvTwoCol}>
+              {/* Main column */}
               <View style={styles.pvMainCol}>
-                <Section title="SUMMARY" text={aboutMe} />
+                <Section title="SUMMARY" text={summary} />
                 <Section title="EXPERIENCE" text={experience} />
                 <Section title="PROJECTS" text={projects} />
+                <Section title="EDUCATION" text={education} />
               </View>
+
+              {/* Sidebar */}
               <View style={styles.pvSideCol}>
-                <Section title="SKILLS" text={skills} compact />
-                <Section title="EDUCATION" text={education} compact />
+                {skills?.trim() ? (
+                  <View style={styles.pvSideCard}>
+                    <Text style={styles.pvSectionTitle}>KEY SKILLS</Text>
+                    {renderSkillChips(skills)}
+                  </View>
+                ) : null}
+
+                {languages?.trim() ? (
+                  <View style={styles.pvSideCard}>
+                    <Text style={styles.pvSectionTitle}>LANGUAGES</Text>
+                    <Text style={styles.pvSectionBody}>{languages}</Text>
+                  </View>
+                ) : null}
+
+                {expertise?.trim() ? (
+                  <View style={styles.pvSideCard}>
+                    <Text style={styles.pvSectionTitle}>EXPERTISE</Text>
+                    <Text style={styles.pvSectionBody}>{expertise}</Text>
+                  </View>
+                ) : null}
+
+                {certificates?.trim() ? (
+                  <View style={styles.pvSideCard}>
+                    <Text style={styles.pvSectionTitle}>CERTIFICATES</Text>
+                    <Text style={styles.pvSectionBody}>{certificates}</Text>
+                  </View>
+                ) : null}
               </View>
             </View>
           </View>
         );
 
-      // 4) CLEAR – modern header, two-column, more border & spacing
+      /**
+       * 4) CLEAR
+       * - Modern header stripe
+       * - Two-column with boxed right side
+       */
       case "clear":
         return (
           <View style={styles.pvPage}>
@@ -823,24 +946,57 @@ export default function TemplateEditorScreen({ route, navigation }) {
               <View>
                 <Text style={styles.pvName}>{mainName}</Text>
                 <Text style={styles.pvHeadline}>{mainHeadline}</Text>
+                {renderContact()}
               </View>
             </View>
 
             <View style={styles.pvTwoCol}>
+              {/* Main column */}
               <View style={styles.pvMainCol}>
-                <Section title="SUMMARY" text={aboutMe} />
+                <Section title="SUMMARY" text={summary} />
                 <Section title="EXPERIENCE" text={experience} />
+                <Section title="PROJECTS" text={projects} />
+                <Section title="EDUCATION" text={education} />
               </View>
+
+              {/* Boxed side column */}
               <View style={styles.pvSideColBoxed}>
-                <Section title="SKILLS" text={skills} compact />
-                <Section title="EDUCATION" text={education} compact />
-                <Section title="PROJECTS" text={projects} compact />
+                {skills?.trim() ? (
+                  <View style={styles.pvSideCardBoxed}>
+                    <Text style={styles.pvSectionTitle}>SKILLS</Text>
+                    {renderSkillChips(skills)}
+                  </View>
+                ) : null}
+
+                {languages?.trim() ? (
+                  <View style={styles.pvSideCardBoxed}>
+                    <Text style={styles.pvSectionTitle}>LANGUAGES</Text>
+                    <Text style={styles.pvSectionBody}>{languages}</Text>
+                  </View>
+                ) : null}
+
+                {expertise?.trim() ? (
+                  <View style={styles.pvSideCardBoxed}>
+                    <Text style={styles.pvSectionTitle}>EXPERTISE</Text>
+                    <Text style={styles.pvSectionBody}>{expertise}</Text>
+                  </View>
+                ) : null}
+
+                {publishes?.trim() ? (
+                  <View style={styles.pvSideCardBoxed}>
+                    <Text style={styles.pvSectionTitle}>PUBLICATIONS</Text>
+                    <Text style={styles.pvSectionBody}>{publishes}</Text>
+                  </View>
+                ) : null}
               </View>
             </View>
           </View>
         );
 
-      // 5) CREATIVE – left color bar, looser layout
+      /**
+       * 5) CREATIVE
+       * - Color left bar, looser sections, “featured” feel
+       */
       case "creative":
         return (
           <View style={styles.pvPageCreative}>
@@ -848,16 +1004,25 @@ export default function TemplateEditorScreen({ route, navigation }) {
             <View style={styles.pvCreativeContent}>
               <View style={styles.pvHeaderCreative}>
                 <Text style={styles.pvName}>{mainName}</Text>
-                <Text style={styles.pvHeadlineCreative}>
-                  {mainHeadline}
-                </Text>
+                <Text style={styles.pvHeadlineCreative}>{mainHeadline}</Text>
+                {renderContact()}
               </View>
 
-              <Section title="ABOUT" text={aboutMe} />
+              <Section title="ABOUT" text={summary} />
               <Section title="HIGHLIGHT EXPERIENCE" text={experience} />
-              <Section title="EDUCATION" text={education} />
-              <Section title="SKILLS & TOOLS" text={skills} />
               <Section title="FEATURED PROJECTS" text={projects} />
+
+              {skills?.trim() ? (
+                <View style={styles.pvSection}>
+                  <Text style={styles.pvSectionTitle}>SKILLS & TOOLS</Text>
+                  {renderSkillChips(skills)}
+                </View>
+              ) : null}
+
+              <Section title="EDUCATION" text={education} />
+              <Section title="EXPERTISE" text={expertise} />
+              <Section title="LANGUAGES" text={languages} />
+              <Section title="AWARDS & PUBLICATIONS" text={publishes} />
             </View>
           </View>
         );
@@ -869,8 +1034,9 @@ export default function TemplateEditorScreen({ route, navigation }) {
             <View style={styles.pvHeaderClassic}>
               <Text style={styles.pvName}>{mainName}</Text>
               <Text style={styles.pvHeadline}>{mainHeadline}</Text>
+              {renderContact()}
             </View>
-            <Section title="SUMMARY" text={aboutMe} />
+            <Section title="SUMMARY" text={summary} />
             <Section title="EXPERIENCE" text={experience} />
             <Section title="EDUCATION" text={education} />
             <Section title="SKILLS" text={skills} />
@@ -1472,4 +1638,50 @@ const styles = StyleSheet.create({
   languageButtonTextActive: {
     color: "#e5e7eb",
   },
+
+  pvContactBlock: {
+    marginTop: 4,
+  },
+  pvContactText: {
+    fontSize: 11,
+    color: "#9ca3af",
+  },
+
+  // Skill chips
+  pvChipWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 4,
+  },
+  pvChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.7)",
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  pvChipText: {
+    fontSize: 11,
+    color: "#e5e7eb",
+  },
+
+  // Sidebar cards
+  pvSideCard: {
+    padding: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(51,65,85,0.9)",
+    marginBottom: 8,
+  },
+  pvSideCardBoxed: {
+    padding: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(51,65,85,0.9)",
+    marginBottom: 8,
+    backgroundColor: "rgba(15,23,42,0.9)",
+  },
+
 });

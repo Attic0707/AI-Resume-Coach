@@ -9,6 +9,7 @@ const interviewRoutes = require("./routes/interviewRoutes");
 const rewriteRoutes = require("./routes/rewriteRoutes");
 
 const templateRoutes = require("./routes/templateRoutes");
+const uploadResumeRoutes = require("./routes/uploadResumeRoutes");
 
 const app = express();
 
@@ -42,6 +43,8 @@ app.use("/publishes", aiLimiter);
 app.use("/work-details", aiLimiter);
 app.use("/edu-details", aiLimiter);
 
+app.use("/upload-resume", aiLimiter);
+
 // Health check
 app.get("/", (req, res) => {
   res.json({ status: "ok", message: "AI Resume Coach backend running" });
@@ -52,5 +55,6 @@ app.use("/", resumeRoutes);
 app.use("/", interviewRoutes);
 app.use("/", rewriteRoutes);
 app.use("/", templateRoutes);
+app.use("/", uploadResumeRoutes);
 
 module.exports = app;
