@@ -71,7 +71,7 @@ export default function UploadResumeScreen({ navigation }) {
       });
 
       const response = await fetch(
-        "https://resume-iq-2p17.onrender.com/api/upload-resume",
+        "https://resume-iq-2p17.onrender.com/upload-resume",
         {
           method: "POST",
           headers: {
