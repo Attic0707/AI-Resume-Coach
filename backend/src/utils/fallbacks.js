@@ -346,7 +346,7 @@ function simpleImprovedAboutMeLocal(aboutmeText, language = "en") {
 
   const hints =
     (isTurkish ? "\n\nNotlar:\n" : "\n\nNotes:\n") +
-    hintLines.map((l) => "• " + l).join("\n");
+    hintLines.map((l) => l).join("\n");
 
   // Very naive text tweaks just to avoid completely raw echo
   let improved = base;

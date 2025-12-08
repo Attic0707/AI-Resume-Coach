@@ -476,9 +476,6 @@ export default function TemplateEditorScreen({ route, navigation }) {
   const [loadingFieldKey, setLoadingFieldKey] = useState(null);
   const [savingDoc, setSavingDoc] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
-  
-  const [loadingImproveAi, setLoadingImproveAi] = useState(null);
-  const [improvedText, setImprovedText] = useState("");
 
   const [language, setLanguage] = useState("en"); // 'en' or 'tr'
   const isTurkish = language === "tr";
@@ -489,6 +486,16 @@ export default function TemplateEditorScreen({ route, navigation }) {
   const [modalMode, setModalMode] = useState("create"); // "create" | "edit"
   const [modalData, setModalData] = useState(DEFAULT_MODAL_DATA);
   const [loadingModalAi, setLoadingModalAi] = useState(false);
+
+  const AI_API_BY_FIELD = {
+    aboutMe: improveAboutMe,
+  };
+  /*
+    skills: improveSkillsSection,
+    projects: improveProjectsSection,
+    expertise: improveExpertiseSection,
+    publishes: improvePublishesSection,
+  */
 
   const checkPaywall = () => {
     if (isPro) return true;
@@ -522,52 +529,6 @@ export default function TemplateEditorScreen({ route, navigation }) {
         f.key === key ? { ...f, value: text } : f
       )
     );
-  };
-
-  const handleAiImprove = async (field) => {
-    try {
-      const body = {
-        sectionKey: field.key,
-        currentText: field.value,
-        templateId,
-        templateName,
-      };
-      /*
-      const response = await fetch(
-        "https://resume-iq-2p17.onrender.com/api/editor/section",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("AI suggestion failed");
-      }
-
-      const data = await response.json();
-      const aiText = data.text || data.result || "";
-
-      if (!aiText) {
-        Alert.alert(
-          "No suggestion",
-          "AI could not generate a suggestion for this field."
-        );
-        return;
-      }
-
-      updateFieldValue(field.key, aiText);
-      */
-    } catch (e) {
-      console.log("AI improve error", e);
-      Alert.alert(
-        "AI Error",
-        "We couldn't generate text for this field. Please try again."
-      );
-    } finally {
-      setLoadingFieldKey(null);
-    }
   };
 
   const buildPreviewText = () => {
@@ -717,12 +678,13 @@ export default function TemplateEditorScreen({ route, navigation }) {
     if (typeof checkPaywall === "function") {
       if (!checkPaywall()) return;
     }
-    if (!field.value.trim()) {
+    const rawText = field?.value ?? "";
+    if (!rawText.trim()) {
       Alert.alert( language === "tr" ? "Uyarı" : "Warning", language === "tr" ? "Lütfen metninizi girin." : "Please input text first.");
       return;
     }
 
-    if (field.value.length > AI_CHAR_LIMIT) {
+    if (rawText.length > AI_CHAR_LIMIT) {
       Alert.alert(
         language === "tr" ? "Metin çok uzun" : "Text too long",
         language === "tr"
@@ -732,27 +694,35 @@ export default function TemplateEditorScreen({ route, navigation }) {
       return;
     }
 
-    setLoadingImproveAi(true);
-    setImprovedText("");
+    const apiFn = AI_API_BY_FIELD[field.key];
+    console.log('CHECK 1: ', apiFn);
+    if (!apiFn) { 
+      Alert.alert( "AI Not Configured", `AI is not configured for field "${field.key}".` );
+      return;
+    }
 
     try {
-      const currentText = field.value;
-      const data = await improveAboutMe({ currentText, language });
-      
+      // start per-field loading
+      setLoadingFieldKey(field.key);
+
+      // const data = await improveAboutMe({ aboutmeText, language });
+      const data = await apiFn({ text: rawText, language, });
+
       if (!data || !data.optimizedText) {
-        throw new Error("Missing improvedAboutMe in response");
+        throw new Error("Missing optimizedText in response");
       }
-      
-      setImprovedText(data.optimizedText);
-      setLoadingImproveAi(false);
+
+      const nextText = data.optimizedText;
+      updateFieldValue(field.key, nextText);
+      setLoadingFieldKey(null);
     } catch (e) {
-      console.log("modal AI error", e);
+      console.log("Improve with AI error", e);
       Alert.alert(
         "AI Error",
         "We couldn't generate improved details. Please try again."
       );
     } finally {
-      setLoadingModalAi(false);
+      setLoadingFieldKey(null);
     }
   };
 

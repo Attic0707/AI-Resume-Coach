@@ -530,26 +530,22 @@ router.post("/optimize-linkedin", async (req, res) => {
 
 // /about-me
 router.post("/about-me", async (req, res) => {
-  const {
-    aboutmeText,
-    sectionType = "summary", // "summary" | "about" | "experience" | etc. (optional)
-    language = "en",
-  } = req.body || {};
+  const { rawText, sectionType = "summary", language = "en", } = req.body || {};  // "summary" | "about" | "experience" | etc. (optional)
 
-  if (!aboutmeText || typeof aboutmeText !== "string") {
+  if (!rawText || typeof rawText !== "string") {
     return res
       .status(400)
-      .json({ error: "aboutmeText (string) is required" });
+      .json({ error: "rawText (string) is required" });
   }
 
-  if (aboutmeText.length > 8000) {
+  if (rawText.length > 8000) {
     return res.status(400).json({
-      error: "aboutmeText text is too long. Maximum allowed is 8,000 characters.",
+      error: "rawText text is too long. Maximum allowed is 8,000 characters.",
     });
   }
 
   // 🔒 Guardrails: abuse / out-of-scope check
-  const guard = assessCareerInput({ aboutmeText: aboutmeText || "" });
+  const guard = assessCareerInput({ rawText: rawText || "" });
   if (!guard.ok) {
     return res.status(400).json({
       error: guard.message,
@@ -561,7 +557,7 @@ router.post("/about-me", async (req, res) => {
 
   // If no OpenAI client → use local mock
   if (!openai) {
-    const optimized = simpleImprovedAboutMeLocal( aboutmeText, language );
+    const optimized = simpleImprovedAboutMeLocal( rawText, language );
     return res.json({
       optimizedText: optimized,
       source: "local-mock",
@@ -577,7 +573,7 @@ router.post("/about-me", async (req, res) => {
       ? (isTurkish ? "İş deneyimi bölümü" : "Experience section")
       : (isTurkish ? "Hakkımda / Özet bölümü" : "About / Summary section");
 
-    const userPrompt = ` Section label: ${sectionLabel} Original text:  ${aboutmeText}
+    const userPrompt = ` Section label: ${sectionLabel} Original text:  ${rawText}
 
     Rewrite this as a high-quality resume / career section.
 
@@ -609,7 +605,7 @@ router.post("/about-me", async (req, res) => {
 
     const optimizedText =
       completion.choices?.[0]?.message?.content?.trim() ||
-      simpleImprovedAboutMeLocal(aboutmeText, language);
+      simpleImprovedAboutMeLocal(rawText, language);
 
     return res.json({
       optimizedText,
@@ -619,7 +615,7 @@ router.post("/about-me", async (req, res) => {
     console.error("Error in /about-me:", err);
 
     if (err?.code === "insufficient_quota" || err?.status === 429) {
-      const optimized = simpleImprovedAboutMeLocal( aboutmeText, language );
+      const optimized = simpleImprovedAboutMeLocal( rawText, language );
       return res.status(200).json({
         optimizedText: optimized,
         source: "local-fallback",
