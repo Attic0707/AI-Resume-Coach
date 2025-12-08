@@ -70,9 +70,6 @@ export async function improveExperienceDetails({ rawText, language }) {
 export async function improveEducationDetails({ rawText, language }) {
   return request("/edu-details", { method: "POST", body: { rawText, language } });
 }
-export async function improveEducationDetails({ rawText, language }) {
-  return request("/edu-details", { method: "POST", body: { rawText, language } });
-}
 
 // ----- Specific API calls ----- //
 export async function optimizeResume({ resumeText, targetRole, language }) {
