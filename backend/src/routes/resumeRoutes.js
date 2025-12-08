@@ -530,8 +530,7 @@ router.post("/optimize-linkedin", async (req, res) => {
 
 // /about-me
 router.post("/about-me", async (req, res) => {
-  const { rawText, sectionType = "summary", language = "en", } = req.body || {};  // "summary" | "about" | "experience" | etc. (optional)
-
+  const { rawText, sectionType = "summary", language = "en", } = req.body || {}; // "summary" | "about" | "experience" | etc. (optional)
   if (!rawText || typeof rawText !== "string") {
     return res
       .status(400)

@@ -2,7 +2,7 @@
 import React, { useContext, useMemo, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Modal, } from "react-native";
 import { AppContext, saveDocument } from "../context/AppContext";
-import { improveAboutMe } from "../utils/api";
+import { improveAboutMe, improveSkillsSection, improveProjectsSection, improveExpertiseSection, improvePublishesSection } from "../utils/api";
 
 const BASE_FIELDS = [
   {
@@ -489,13 +489,11 @@ export default function TemplateEditorScreen({ route, navigation }) {
 
   const AI_API_BY_FIELD = {
     aboutMe: improveAboutMe,
-  };
-  /*
     skills: improveSkillsSection,
     projects: improveProjectsSection,
     expertise: improveExpertiseSection,
     publishes: improvePublishesSection,
-  */
+  };
 
   const checkPaywall = () => {
     if (isPro) return true;
@@ -695,7 +693,6 @@ export default function TemplateEditorScreen({ route, navigation }) {
     }
 
     const apiFn = AI_API_BY_FIELD[field.key];
-    console.log('CHECK 1: ', apiFn);
     if (!apiFn) { 
       Alert.alert( "AI Not Configured", `AI is not configured for field "${field.key}".` );
       return;
@@ -705,8 +702,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
       // start per-field loading
       setLoadingFieldKey(field.key);
 
-      // const data = await improveAboutMe({ aboutmeText, language });
-      const data = await apiFn({ text: rawText, language, });
+      const data = await apiFn({ rawText: rawText, language, });
 
       if (!data || !data.optimizedText) {
         throw new Error("Missing optimizedText in response");

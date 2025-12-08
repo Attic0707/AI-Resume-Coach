@@ -48,11 +48,24 @@ export async function pingBackend() {
   }
 }
 
-// ----- Specific API calls ----- //
+// ----- Updated API calls ----- //
 export async function improveAboutMe({ rawText, language }) {
   return request("/about-me", { method: "POST", body: { rawText, language } });
 }
+export async function improveSkillsSection({ rawText, language }) {
+  return request("/skills", { method: "POST", body: { rawText, language } });
+}
+export async function improveProjectsSection({ rawText, language }) {
+  return request("/projects", { method: "POST", body: { rawText, language } });
+}
+export async function improveExpertiseSection({ rawText, language }) {
+  return request("/expertise", { method: "POST", body: { rawText, language } });
+}
+export async function improvePublishesSection({ rawText, language }) {
+  return request("/publishes", { method: "POST", body: { rawText, language } });
+}
 
+// ----- Specific API calls ----- //
 export async function optimizeResume({ resumeText, targetRole, language }) {
   return request("/optimize-resume", { method: "POST", body: { resumeText, targetRole, language } });
 }
