@@ -77,6 +77,7 @@ export default function App() {
           <Stack.Screen name="InterviewCoach" component={InterviewCoachScreen} options={{ title: "Interview Coach", headerShown: true }} />
           <Stack.Screen name="Upgrade" component={UpgradeScreen} options={{ title: "Upgrade & Theme", headerShown: true }}/>
           <Stack.Screen name="TemplateEditor" component={TemplateEditorScreen} options={{ title: "Edit your Template", headerShown: true }}/>
+          <Stack.Screen name="ResumeEditor" component={ResumeEditorScreen} options={{ title: "Edit your Uploaded File", headerShown: true }}/>
         </Stack.Navigator>
       </NavigationContainer>
     </AppProvider>
