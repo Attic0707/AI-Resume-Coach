@@ -8,6 +8,8 @@ const resumeRoutes = require("./routes/resumeRoutes");
 const interviewRoutes = require("./routes/interviewRoutes");
 const rewriteRoutes = require("./routes/rewriteRoutes");
 
+const templateRoutes = require("./routes/templateRoutes");
+
 const app = express();
 
 app.set("trust proxy", 1); // or true
@@ -32,6 +34,12 @@ app.use("/bullet-rewrite", aiLimiter);
 app.use("/analyze-job", aiLimiter);
 app.use("/optimize-linkedin", aiLimiter);
 
+app.use("/about-me", aiLimiter);
+app.use("/skills", aiLimiter);
+app.use("/projects", aiLimiter);
+app.use("/expertise", aiLimiter);
+app.use("/publishes", aiLimiter);
+
 // Health check
 app.get("/", (req, res) => {
   res.json({ status: "ok", message: "AI Resume Coach backend running" });
@@ -41,5 +49,6 @@ app.get("/", (req, res) => {
 app.use("/", resumeRoutes);
 app.use("/", interviewRoutes);
 app.use("/", rewriteRoutes);
+app.use("/", templateRoutes);
 
 module.exports = app;

@@ -702,7 +702,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
       // start per-field loading
       setLoadingFieldKey(field.key);
 
-      const data = await apiFn({ rawText: rawText, language, });
+      const data = await apiFn({ rawText, language, });
 
       if (!data || !data.optimizedText) {
         throw new Error("Missing optimizedText in response");
