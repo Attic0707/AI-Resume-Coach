@@ -1,5 +1,6 @@
 // src/utils/parseResume.js
-const pdfParse = require("pdf-parse");
+const pdfParseModule = require("pdf-parse");
+const pdfParse = typeof pdfParseModule === "function" ? pdfParseModule : pdfParseModule?.default;
 const mammoth = require("mammoth");
 const textract = require("textract"); // for legacy .doc or fallback
 
