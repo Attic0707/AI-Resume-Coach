@@ -2,7 +2,7 @@
 const express = require("express");
 const OpenAI = require("openai");
 const { assessCareerInput } = require("../utils/guardrails");
-const { simpleImprovedAboutMeLocal } = require("../utils/fallbacks");
+const { simpleImprovedAboutMeLocal, simpleImprovedSkillsLocal, simpleImprovedProjectsLocal, simpleImprovedExpertiseLocal, simpleImprovedPublishesLocal } = require("../utils/fallbacks");
 const router = express.Router();
 
 // Only instantiate OpenAI when we actually have a key AND not in mock mode
