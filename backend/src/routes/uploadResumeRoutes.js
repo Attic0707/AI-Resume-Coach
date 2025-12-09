@@ -4,7 +4,7 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const Resume = require("../models/Resume");
-const parseResumeFromBuffer = require("../utils/parseResume");
+const parseResume = require("../utils/parseResume");
 
 // basic disk storage; swap with S3 if needed
 const upload = multer({
@@ -24,7 +24,7 @@ router.post(
       const mimeType = req.file.mimetype;
 
       // your existing logic (textract/pdf-parse/etc.)
-      const parsed = await parseResumeFromBuffer(filePath);
+      const parsed = await parseResume(filePath);
       // expected shape:
       // { title, sections: [{ key, label, value }], meta }
 
