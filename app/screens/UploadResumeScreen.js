@@ -3,7 +3,6 @@ import React, { useContext, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import { AppContext } from "../context/AppContext";
-import { uploadResume } from "../utils/api";
 
 export default function UploadResumeScreen({ navigation }) {
   const { theme, language } = useContext(AppContext);
@@ -57,9 +56,6 @@ export default function UploadResumeScreen({ navigation }) {
         type: file.mimeType || "application/octet-stream",
       });
 
-      const response = await uploadResume({ formData });
-
-      /*
       const response = await fetch(
         "https://resume-iq-2p17.onrender.com/upload-resume",
         {
@@ -70,7 +66,6 @@ export default function UploadResumeScreen({ navigation }) {
           body: formData,
         }
       );
-      */
 
       if (!response.ok) {
         console.log("upload error status", response.status);

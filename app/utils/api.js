@@ -71,11 +71,6 @@ export async function improveEducationDetails({ rawText, language }) {
   return request("/edu-details", { method: "POST", body: { rawText, language } });
 }
 
-// file upload
-export async function uploadResume({ formData }) {
-  return request("/upload-resume", { method: "POST", body: { formData } });
-}
-
 // ----- Specific API calls ----- //
 export async function optimizeResume({ resumeText, targetRole, language }) {
   return request("/optimize-resume", { method: "POST", body: { resumeText, targetRole, language } });
