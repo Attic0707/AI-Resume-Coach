@@ -1,8 +1,12 @@
 // src/utils/parseResume.js
-const pdfParseModule = require("pdf-parse");
-const pdfParse = typeof pdfParseModule === "function" ? pdfParseModule : pdfParseModule?.default;
+
+// const pdfParseModule = require("pdf-parse");
+// const pdfParse = typeof pdfParseModule === "function" ? pdfParseModule : pdfParseModule?.default;
+
+const { extractTextFromPdfBuffer } = require("./pdfTextFromBuffer");
 const mammoth = require("mammoth");
 const textract = require("textract"); // for legacy .doc or fallback
+
 
 // Promisified textract
 function extractWithTextract(buffer, mimeType) {
@@ -259,9 +263,9 @@ async function parseResumeFromBuffer(buffer, mimeType, originalName) {
 
   try {
     if (lowerMime.includes("pdf") || lowerName.endsWith(".pdf")) {
-      const data = await pdfParse(buffer);
-      rawText = data.text || "";
-      meta.pageCount = data.numpages || null;
+      const text = await extractTextFromPdfBuffer(buffer);
+      rawText = text || "";
+      // meta.pageCount = data.numpages || null;
     } else if (
       lowerMime.includes(
         "vnd.openxmlformats-officedocument.wordprocessingml.document"

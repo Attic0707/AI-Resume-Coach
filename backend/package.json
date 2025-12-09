@@ -17,6 +17,7 @@
     "multer": "^2.0.2",
     "openai": "^4.104.0",
     "pdf-parse": "^2.4.5",
+    "pdf2json": "^4.0.0",
     "textract": "^2.5.0"
   }
 }
