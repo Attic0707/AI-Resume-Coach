@@ -2,16 +2,10 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-
-const Resume = require("../models/Resume");
 const { parseResumeFromBuffer } = require("../utils/parseResume");
 
-// Store uploaded files on disk so we have an originalFilePath
-const upload = multer({
-  dest: path.join(__dirname, "../../uploads/resumes"),
-});
+// Use memory storage: we get req.file.buffer directly
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.post("/upload-resume", upload.single("file"), async (req, res) => {
   try {
@@ -19,50 +13,44 @@ router.post("/upload-resume", upload.single("file"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // --- File info from multer ---
-    const filePath = req.file.path;            // e.g. /opt/render/project/.../uploads/resumes/xyz
+    const buffer = req.file.buffer;
     const mimeType = req.file.mimetype;
     const originalName = req.file.originalname;
 
-    // --- Read file into buffer and parse ---
-    const buffer = fs.readFileSync(filePath);
+    // Debug log (optional, but helpful in Render logs):
+    console.log(
+      "[upload-resume] file:",
+      originalName,
+      "mime:",
+      mimeType,
+      "size:",
+      buffer?.length
+    );
 
-    const parsed = await parseResumeFromBuffer(
+    const { title, sections, meta } = await parseResumeFromBuffer(
       buffer,
       mimeType,
       originalName
     );
 
-    const { title, sections, meta } = parsed;
-
     if (!sections || !Array.isArray(sections)) {
+      console.error("[upload-resume] invalid sections:", sections);
       return res
         .status(500)
         .json({ error: "Parser did not return valid sections" });
     }
 
-    // --- Persist in Mongo so we can update sections later ---
-    const resumeDoc = await Resume.create({
-      userId: req.user?.id || null, // optional for now; can be null
-      originalFilePath: filePath,
-      mimeType,
-      title: title || originalName,
-      sections: sections || [],
-      meta: meta || {},
-    });
-
-    // --- Respond to mobile app ---
+    // ✅ For now, just send parsed data back to the app
     return res.json({
-      resumeId: resumeDoc._id.toString(),
-      title: resumeDoc.title,
-      sections: resumeDoc.sections,
-      meta: resumeDoc.meta,
+      title,
+      sections,
+      meta,
     });
   } catch (err) {
     console.error("upload-resume error:", err);
     return res
       .status(500)
-      .json({ error: "Failed to parse and store resume." });
+      .json({ error: "Failed to parse resume file" });
   }
 });
 

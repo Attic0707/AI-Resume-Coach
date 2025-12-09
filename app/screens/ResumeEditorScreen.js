@@ -109,7 +109,7 @@ const AI_API_BY_FIELD = {
 
 export default function ResumeEditorScreen({ route, navigation }) {
   const { theme, isPro, freeCreditsLeft, consumeCredit, language, setLanguage, } = useContext(AppContext);
-  const { mode, initialTitle, initialSections, sourceFileName, meta, resumeId } = route.params || {};
+  const { mode, initialTitle, initialSections, sourceFileName, meta,  } = route.params || {}; // resumeId
   const [docTitle, setDocTitle] = useState( initialTitle || "Imported Resume" );
   const [fields, setFields] = useState([]);
   const [loadingFieldKey, setLoadingFieldKey] = useState(null);
