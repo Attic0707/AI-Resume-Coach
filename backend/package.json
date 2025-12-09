@@ -13,11 +13,7 @@
     "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "express-rate-limit": "^8.2.1",
-    "mammoth": "^1.11.0",
-    "multer": "^2.0.2",
     "openai": "^4.104.0",
-    "pdf-parse": "^2.4.5",
-    "pdf2json": "^4.0.0",
-    "textract": "^2.5.0"
+    "pdf2json": "^4.0.0"
   }
 }
