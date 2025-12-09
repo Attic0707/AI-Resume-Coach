@@ -109,7 +109,7 @@ const AI_API_BY_FIELD = {
 
 export default function ResumeEditorScreen({ route, navigation }) {
   const { theme, isPro, freeCreditsLeft, consumeCredit, language, setLanguage, } = useContext(AppContext);
-  const { mode, initialTitle, initialSections, sourceFileName, meta,  } = route.params || {}; // resumeId
+  const { mode, initialTitle, initialSections, sourceFileName, meta, resumeId, } = route.params || {}; 
   const [docTitle, setDocTitle] = useState( initialTitle || "Imported Resume" );
   const [fields, setFields] = useState([]);
   const [loadingFieldKey, setLoadingFieldKey] = useState(null);
@@ -220,7 +220,7 @@ export default function ResumeEditorScreen({ route, navigation }) {
     try {
       setSavingDoc(true);
 
-      // 1) Update original resume sections (if this came from upload)
+      // 1) Update original resume sections (if this came from upload AND we have a resumeId)
       if (resumeId) {
         const sectionsPayload = fields.map((f) => ({
           key: f.key,
@@ -228,9 +228,7 @@ export default function ResumeEditorScreen({ route, navigation }) {
           value: f.value || "",
         }));
 
-        await fetch(
-          "https://resume-iq-2p17.onrender.com/resumes/" + resumeId + "/sections",
-          {
+        await fetch( "https://resume-iq-2p17.onrender.com/resumes/" + resumeId + "/sections", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ sections: sectionsPayload }),
@@ -247,12 +245,15 @@ export default function ResumeEditorScreen({ route, navigation }) {
         content,
       });
 
-      Alert.alert(
-        isTurkish ? "Kaydedildi" : "Saved",
-        isTurkish
+      const message = resumeId
+        ? isTurkish
           ? "CV'in hem orijinal dosyada hem de My Documents bölümünde güncellendi."
           : "Your resume has been updated in the original file and saved to My Documents."
-      );
+        : isTurkish
+        ? "CV'in My Documents bölümüne kaydedildi."
+        : "Your resume has been saved to My Documents.";
+
+      Alert.alert(isTurkish ? "Kaydedildi" : "Saved", message);
     } catch (e) {
       console.log("saveDocument error", e);
       Alert.alert(
