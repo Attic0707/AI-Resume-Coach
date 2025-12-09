@@ -99,6 +99,7 @@ export default function UploadResumeScreen({ navigation }) {
         initialSections: data.sections,
         sourceFileName: file.name,
         meta: data.meta || null,
+        resumeId: data.resumeId,
       });
     } catch (e) {
       console.log("upload error", e);

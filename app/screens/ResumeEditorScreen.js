@@ -1,30 +1,18 @@
 // app/screens/ResumeEditorScreen.js
 import React, { useContext, useMemo, useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  Modal,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Modal } from "react-native";
 import { AppContext, saveDocument } from "../context/AppContext";
-import {
-  improveAboutMe,
-  improveSkillsSection,
-  improveProjectsSection,
-  improveExpertiseSection,
-  improvePublishesSection,
-} from "../utils/api";
+import { improveAboutMe, improveSkillsSection, improveProjectsSection, improveExpertiseSection, improvePublishesSection } from "../utils/api";
 
 const AI_CHAR_LIMIT = 20000;
 
 // Default order / base metadata for fields we care about
 const BASE_FIELD_CONFIG = [
-  { key: "name", label: "Full Name", isForAi: false },
+  { 
+    key: "name",
+    label: "Full Name",
+    isForAi: false
+  },
   {
     key: "headline",
     label: "Job Title / Headline",
@@ -34,8 +22,7 @@ const BASE_FIELD_CONFIG = [
   {
     key: "aboutMe",
     label: "About Me",
-    placeholder:
-      "Short professional summary or profile section at the top of your resume.",
+    placeholder: "Short professional summary or profile section at the top of your resume.",
     isForAi: true,
     multiline: true,
   },
@@ -57,24 +44,21 @@ const BASE_FIELD_CONFIG = [
   {
     key: "education",
     label: "Education",
-    placeholder:
-      "Degrees, institutions, graduation years, key coursework or achievements.",
+    placeholder: "Degrees, institutions, graduation years, key coursework or achievements.",
     isForAi: false,
     multiline: true,
   },
   {
     key: "skills",
     label: "Skills",
-    placeholder:
-      "Hard skills, tools, technologies and languages. You can separate with commas or bullets.",
+    placeholder: "Hard skills, tools, technologies and languages. You can separate with commas or bullets.",
     isForAi: true,
     multiline: true,
   },
   {
     key: "projects",
     label: "Projects",
-    placeholder:
-      "Key projects, portfolio items, open source, side products – especially useful for creative/tech roles.",
+    placeholder: "Key projects, portfolio items, open source, side products – especially useful for creative/tech roles.",
     isForAi: true,
     multiline: true,
   },
@@ -88,32 +72,28 @@ const BASE_FIELD_CONFIG = [
   {
     key: "expertise",
     label: "Expertise",
-    placeholder:
-      "Areas of expertise where you feel confident (e.g., Enterprise Salesforce Architecture).",
+    placeholder: "Areas of expertise where you feel confident (e.g., Enterprise Salesforce Architecture).",
     isForAi: true,
     multiline: true,
   },
   {
     key: "certificates",
     label: "Certificates",
-    placeholder:
-      "Official certificates you hold to display your experience / knowledge in a particular area.",
+    placeholder: "Official certificates you hold to display your experience / knowledge in a particular area.",
     isForAi: false,
     multiline: true,
   },
   {
     key: "publishes",
     label: "Published Works / Rewards",
-    placeholder:
-      "Any kind of reward you received or any published, acclaimed work.",
+    placeholder: "Any kind of reward you received or any published, acclaimed work.",
     isForAi: true,
     multiline: true,
   },
   {
     key: "referrals",
     label: "Referrals",
-    placeholder:
-      "Referrals from a previous work place or a relevant person to endorse your skills / experience.",
+    placeholder: "Referrals from a previous work place or a relevant person to endorse your skills / experience.",
     isForAi: false,
     multiline: true,
   },
@@ -128,21 +108,9 @@ const AI_API_BY_FIELD = {
 };
 
 export default function ResumeEditorScreen({ route, navigation }) {
-  const {
-    theme,
-    isPro,
-    freeCreditsLeft,
-    consumeCredit,
-    language,
-    setLanguage,
-  } = useContext(AppContext);
-
-  const { mode, initialTitle, initialSections, sourceFileName, meta } =
-    route.params || {};
-
-  const [docTitle, setDocTitle] = useState(
-    initialTitle || "Imported Resume"
-  );
+  const { theme, isPro, freeCreditsLeft, consumeCredit, language, setLanguage, } = useContext(AppContext);
+  const { mode, initialTitle, initialSections, sourceFileName, meta, resumeId } = route.params || {};
+  const [docTitle, setDocTitle] = useState( initialTitle || "Imported Resume" );
   const [fields, setFields] = useState([]);
   const [loadingFieldKey, setLoadingFieldKey] = useState(null);
   const [savingDoc, setSavingDoc] = useState(false);
@@ -251,6 +219,26 @@ export default function ResumeEditorScreen({ route, navigation }) {
   const handleSaveDocument = async () => {
     try {
       setSavingDoc(true);
+
+      // 1) Update original resume sections (if this came from upload)
+      if (resumeId) {
+        const sectionsPayload = fields.map((f) => ({
+          key: f.key,
+          label: f.label,
+          value: f.value || "",
+        }));
+
+        await fetch(
+          "https://resume-iq-2p17.onrender.com/resumes/" + resumeId + "/sections",
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sections: sectionsPayload }),
+          }
+        );
+      }
+
+      // 2) Save pretty text snapshot into My Documents
       const content = buildPreviewText();
 
       await saveDocument({
@@ -262,8 +250,8 @@ export default function ResumeEditorScreen({ route, navigation }) {
       Alert.alert(
         isTurkish ? "Kaydedildi" : "Saved",
         isTurkish
-          ? "CV'in My Documents bölümüne kaydedildi."
-          : "Your resume has been saved to My Documents."
+          ? "CV'in hem orijinal dosyada hem de My Documents bölümünde güncellendi."
+          : "Your resume has been updated in the original file and saved to My Documents."
       );
     } catch (e) {
       console.log("saveDocument error", e);
@@ -332,130 +320,6 @@ export default function ResumeEditorScreen({ route, navigation }) {
     } finally {
       setLoadingFieldKey(null);
     }
-  };
-
-  // ---------- Preview UI ----------
-  const renderPreviewContent = () => {
-    const {
-      name,
-      headline,
-      aboutMe,
-      contact,
-      experience,
-      education,
-      skills,
-      projects,
-      languages,
-      expertise,
-      certificates,
-      publishes,
-      referrals,
-    } = previewData;
-
-    const mainName = name || "Your Name";
-    const mainHeadline = headline || "Target Role / Headline";
-
-    const Section = ({ title, text }) => {
-      if (!text?.trim()) return null;
-      return (
-        <View style={styles.pvSection}>
-          <Text style={styles.pvSectionTitle}>{title}</Text>
-          <Text style={styles.pvSectionBody}>{text.trim()}</Text>
-        </View>
-      );
-    };
-
-    const toChips = (text = "") =>
-      text
-        .split(/[,;•\n]+/g)
-        .map((t) => t.trim())
-        .filter(Boolean)
-        .slice(0, 16);
-
-    const renderSkillChips = (text) => {
-      const chips = toChips(text);
-      if (!chips.length) return null;
-      return (
-        <View style={styles.pvChipWrap}>
-          {chips.map((c, idx) => (
-            <View key={idx} style={styles.pvChip}>
-              <Text style={styles.pvChipText}>{c}</Text>
-            </View>
-          ))}
-        </View>
-      );
-    };
-
-    const renderContact = () => {
-      if (!contact?.trim()) return null;
-      return (
-        <View style={styles.pvContactBlock}>
-          {contact.split("\n").map((line, idx) => (
-            <Text key={idx} style={styles.pvContactText}>
-              {line.trim()}
-            </Text>
-          ))}
-        </View>
-      );
-    };
-
-    // Keep preview similar to TemplateEditor "classic" style
-    return (
-      <View style={styles.pvPage}>
-        <View style={styles.pvHeaderClassic}>
-          <Text style={styles.pvName}>{mainName}</Text>
-          <Text style={styles.pvHeadline}>{mainHeadline}</Text>
-          {renderContact()}
-        </View>
-
-        <Section
-          title={isTurkish ? "PROFİL" : "PROFILE"}
-          text={aboutMe}
-        />
-        <Section
-          title={isTurkish ? "DENEYİM" : "EXPERIENCE"}
-          text={experience}
-        />
-        <Section
-          title={isTurkish ? "EĞİTİM" : "EDUCATION"}
-          text={education}
-        />
-
-        {skills?.trim() ? (
-          <View style={styles.pvSection}>
-            <Text style={styles.pvSectionTitle}>
-              {isTurkish ? "YETENEKLER" : "SKILLS"}
-            </Text>
-            {renderSkillChips(skills)}
-          </View>
-        ) : null}
-
-        <Section
-          title={isTurkish ? "PROJELER" : "PROJECTS"}
-          text={projects}
-        />
-        <Section
-          title={isTurkish ? "DİLLER" : "LANGUAGES"}
-          text={languages}
-        />
-        <Section
-          title={isTurkish ? "UZMANLIK ALANLARI" : "AREAS OF EXPERTISE"}
-          text={expertise}
-        />
-        <Section
-          title={isTurkish ? "SERTİFİKALAR" : "CERTIFICATES"}
-          text={certificates}
-        />
-        <Section
-          title={isTurkish ? "YAYINLAR & ÖDÜLLER" : "PUBLICATIONS & AWARDS"}
-          text={publishes}
-        />
-        <Section
-          title={isTurkish ? "REFERANSLAR" : "REFERRALS"}
-          text={referrals}
-        />
-      </View>
-    );
   };
 
   const headerTitle =
@@ -692,23 +556,6 @@ export default function ResumeEditorScreen({ route, navigation }) {
           { backgroundColor: theme.bg },
         ]}
       >
-        <TouchableOpacity
-          style={[
-            styles.footerButton,
-            styles.previewButton,
-            { borderColor: theme.border },
-          ]}
-          onPress={() => setPreviewVisible(true)}
-        >
-          <Text
-            style={[
-              styles.previewText,
-              { color: theme.textPrimary },
-            ]}
-          >
-            {isTurkish ? "Önizleme" : "Preview"}
-          </Text>
-        </TouchableOpacity>
 
         <TouchableOpacity
           style={[
@@ -735,54 +582,6 @@ export default function ResumeEditorScreen({ route, navigation }) {
           )}
         </TouchableOpacity>
       </View>
-
-      {/* Preview modal */}
-      <Modal
-        visible={previewVisible}
-        animationType="slide"
-        onRequestClose={() => setPreviewVisible(false)}
-      >
-        <View
-          style={[
-            styles.previewContainer,
-            { backgroundColor: theme.bg },
-          ]}
-        >
-          <View style={styles.previewHeader}>
-            <TouchableOpacity
-              onPress={() => setPreviewVisible(false)}
-            >
-              <Text
-                style={[
-                  styles.backText,
-                  { color: theme.textSecondary },
-                ]}
-              >
-                {isTurkish ? "Kapat" : "Close"}
-              </Text>
-            </TouchableOpacity>
-            <Text
-              style={[
-                styles.previewTitle,
-                { color: theme.textPrimary },
-              ]}
-            >
-              {isTurkish ? "CV Önizleme" : "Resume Preview"}
-            </Text>
-            <View style={{ width: 40 }} />
-          </View>
-
-          <ScrollView
-            style={styles.previewScroll}
-            contentContainerStyle={{
-              padding: 16,
-              paddingBottom: 32,
-            }}
-          >
-            {renderPreviewContent()}
-          </ScrollView>
-        </View>
-      </Modal>
     </View>
   );
 }

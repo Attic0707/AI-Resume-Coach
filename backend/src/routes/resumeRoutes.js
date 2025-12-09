@@ -4,6 +4,8 @@ const OpenAI = require("openai");
 const { assessCareerInput } = require("../utils/guardrails");
 const { simpleLocalOptimize, simpleJobMatchLocal, simpleCoverLetterLocal, simpleJobAnalysisLocal, simpleLinkedInOptimizeLocal } = require("../utils/fallbacks");
 const router = express.Router();
+const Resume = require("../models/Resume");
+const { rebuildResumeFileFromSections } = require("../utils/rebuildResumeFile");
 
 // Only instantiate OpenAI when we actually have a key AND not in mock mode
 let openai = null;
@@ -525,6 +527,60 @@ router.post("/optimize-linkedin", async (req, res) => {
     }
 
     return res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.put("/resumes/:id/sections", async (req, res) => {
+  try {
+    const resumeId = req.params.id;
+    const { sections } = req.body;
+
+    if (!Array.isArray(sections)) {
+      return res
+        .status(400)
+        .json({ error: "sections must be an array" });
+    }
+
+    const resumeDoc = await Resume.findById(resumeId);
+    if (!resumeDoc) {
+      return res.status(404).json({ error: "Resume not found" });
+    }
+
+    // Merge by key
+    const existingMap = {};
+    resumeDoc.sections.forEach((s) => {
+      existingMap[s.key] = s;
+    });
+
+    sections.forEach((incoming) => {
+      if (!incoming.key) return;
+      if (existingMap[incoming.key]) {
+        existingMap[incoming.key].value = incoming.value || "";
+        existingMap[incoming.key].label =
+          incoming.label || existingMap[incoming.key].label;
+      } else {
+        resumeDoc.sections.push({
+          key: incoming.key,
+          label: incoming.label || incoming.key,
+          value: incoming.value || "",
+        });
+      }
+    });
+
+    await resumeDoc.save();
+
+    // OPTIONAL: rebuild docx/pdf and overwrite originalFilePath (or create a new one)
+    try {
+      await rebuildResumeFileFromSections(resumeDoc);
+    } catch (e) {
+      console.error("Failed to rebuild resume file:", e);
+      // don't fail the whole request because of a rebuild error
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("update sections error:", err);
+    res.status(500).json({ error: "Failed to update sections" });
   }
 });
 

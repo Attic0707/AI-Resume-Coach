@@ -1,16 +1,14 @@
-// src/routes/uploadResumeRoutes.js
+// backend/src/routes/uploadResumeRoutes.js
 const express = require("express");
-const multer = require("multer");
-const { parseResumeFromBuffer } = require("../utils/parseResume");
-
 const router = express.Router();
+const multer = require("multer");
+const path = require("path");
+const Resume = require("../models/Resume");
+const parseResumeFromBuffer = require("../utils/parseResume");
 
-// store file in memory as Buffer (we don't need to write to disk)
+// basic disk storage; swap with S3 if needed
 const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 8 * 1024 * 1024, // 8 MB limit, adjust as needed
-  },
+  dest: path.join(__dirname, "../../uploads/resumes"),
 });
 
 router.post(
@@ -19,24 +17,37 @@ router.post(
   async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: "No file uploaded." });
+        return res.status(400).json({ error: "No file uploaded" });
       }
 
-      const { buffer, mimetype, originalname } = req.file;
+      const filePath = req.file.path;
+      const mimeType = req.file.mimetype;
 
-      const parsed = await parseResumeFromBuffer(
-        buffer,
-        mimetype,
-        originalname
-      );
+      // your existing logic (textract/pdf-parse/etc.)
+      const parsed = await parseResumeFromBuffer(filePath);
+      // expected shape:
+      // { title, sections: [{ key, label, value }], meta }
 
-      // parsed = { title, sections, meta }
-      return res.json(parsed);
-    } catch (err) {
-      console.error("[/api/upload-resume] error:", err);
-      return res.status(500).json({
-        error: "Could not process this resume file.",
+      const resumeDoc = await Resume.create({
+        userId: req.user?.id || null,   // optional
+        originalFilePath: filePath,
+        mimeType,
+        title: parsed.title || req.file.originalname,
+        sections: parsed.sections || [],
+        meta: parsed.meta || {},
       });
+
+      res.json({
+        resumeId: resumeDoc._id.toString(),
+        title: resumeDoc.title,
+        sections: resumeDoc.sections,
+        meta: resumeDoc.meta,
+      });
+    } catch (err) {
+      console.error("upload-resume error:", err);
+      res
+        .status(500)
+        .json({ error: "Failed to parse and store resume." });
     }
   }
 );
