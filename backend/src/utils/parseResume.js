@@ -1,26 +1,6 @@
 // src/utils/parseResume.js
-
-// const pdfParseModule = require("pdf-parse");
-// const pdfParse = typeof pdfParseModule === "function" ? pdfParseModule : pdfParseModule?.default;
-
 const { extractTextFromPdfBuffer } = require("./pdfTextFromBuffer");
 const mammoth = require("mammoth");
-const textract = require("textract"); // for legacy .doc or fallback
-
-
-// Promisified textract
-function extractWithTextract(buffer, mimeType) {
-  return new Promise((resolve, reject) => {
-    textract.fromBufferWithMime(
-      mimeType || "application/msword",
-      buffer,
-      (err, text) => {
-        if (err) return reject(err);
-        resolve(text || "");
-      }
-    );
-  });
-}
 
 /**
  * Normalize text:
@@ -263,9 +243,9 @@ async function parseResumeFromBuffer(buffer, mimeType, originalName) {
 
   try {
     if (lowerMime.includes("pdf") || lowerName.endsWith(".pdf")) {
-      const text = await extractTextFromPdfBuffer(buffer);
-      rawText = text || "";
-      // meta.pageCount = data.numpages || null;
+      const data = await extractTextFromPdfBuffer(buffer);
+      rawText = data.text || "";
+      meta.pageCount = data.pageCount || null;
     } else if (
       lowerMime.includes(
         "vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -274,14 +254,8 @@ async function parseResumeFromBuffer(buffer, mimeType, originalName) {
     ) {
       const { value } = await mammoth.extractRawText({ buffer });
       rawText = value || "";
-    } else if (
-      lowerMime.includes("msword") ||
-      lowerName.endsWith(".doc")
-    ) {
-      rawText = await extractWithTextract(buffer, mimeType);
     } else {
-      // Fallback: try textract anyway
-      rawText = await extractWithTextract(buffer, mimeType);
+      throw new Error("Unsupported file type. Please upload a PDF or DOCX.");
     }
   } catch (err) {
     console.error("[parseResumeFromBuffer] extract error:", err);
