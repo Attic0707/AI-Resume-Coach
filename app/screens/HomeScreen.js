@@ -31,12 +31,6 @@ export default function HomeScreen({ navigation }) {
         Optimize your CV, match job descriptions and practice interviews with AI.
       </Text>
 
-      {!isPro && (
-        <Text style={[ styles.sectionSubtitle, { color: theme.textSecondary }, ]} >
-          Free credits left: {freeCreditsLeft}
-        </Text>
-      )}
-
       <ScrollView contentContainerStyle={styles.cardList} showsVerticalScrollIndicator={false} >
         <FeatureCard title="Upload / Import Resume" description="Paste your current CV or import it, then improve each section with AI suggestions." icon={optimizeIcon} onPress={() => navigation.navigate("UploadResume")} />
         <FeatureCard title="Start from Template" description="Pick a layout, answer guided questions, and generate a complete resume." icon={optimizeIcon} onPress={() => navigation.navigate("TemplatePicker")} />

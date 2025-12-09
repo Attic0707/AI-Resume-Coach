@@ -114,7 +114,6 @@ export default function ResumeEditorScreen({ route, navigation }) {
   const [fields, setFields] = useState([]);
   const [loadingFieldKey, setLoadingFieldKey] = useState(null);
   const [savingDoc, setSavingDoc] = useState(false);
-  const [previewVisible, setPreviewVisible] = useState(false);
 
   const isTurkish = language === "tr";
   const disclaimer = isTurkish

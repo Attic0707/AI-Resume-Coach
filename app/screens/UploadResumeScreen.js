@@ -1,15 +1,9 @@
 // app/screens/UploadResumeScreen.js
 import React, { useContext, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import { AppContext } from "../context/AppContext";
+import { uploadResume } from "../utils/api";
 
 export default function UploadResumeScreen({ navigation }) {
   const { theme, language } = useContext(AppContext);
@@ -24,7 +18,6 @@ export default function UploadResumeScreen({ navigation }) {
         type: [
           "application/pdf",
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // docx
-          "application/msword", // doc
         ],
         copyToCacheDirectory: true,
         multiple: false,
@@ -42,10 +35,7 @@ export default function UploadResumeScreen({ navigation }) {
       console.log("file pick error", e);
       Alert.alert(
         isTurkish ? "Hata" : "Error",
-        isTurkish
-          ? "Dosya seçici açılamadı."
-          : "Could not open the file picker."
-      );
+        isTurkish ? "Dosya seçici açılamadı." : "Could not open the file picker." );
     }
   };
 
@@ -53,10 +43,7 @@ export default function UploadResumeScreen({ navigation }) {
     if (!file) {
       Alert.alert(
         isTurkish ? "Dosya yok" : "No file",
-        isTurkish
-          ? "Lütfen önce bir CV dosyası seçin."
-          : "Please select a resume file first."
-      );
+        isTurkish ? "Lütfen önce bir CV dosyası seçin." : "Please select a resume file first." );
       return;
     }
 
@@ -70,6 +57,9 @@ export default function UploadResumeScreen({ navigation }) {
         type: file.mimeType || "application/octet-stream",
       });
 
+      const response = await uploadResume({ formData });
+
+      /*
       const response = await fetch(
         "https://resume-iq-2p17.onrender.com/upload-resume",
         {
@@ -80,6 +70,7 @@ export default function UploadResumeScreen({ navigation }) {
           body: formData,
         }
       );
+      */
 
       if (!response.ok) {
         console.log("upload error status", response.status);

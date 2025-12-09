@@ -2,10 +2,10 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const { parseResumeFromBuffer } = require("../utils/parseResume");
-
-// Use memory storage: we get req.file.buffer directly
 const upload = multer({ storage: multer.memoryStorage() });
+
+const { parseResumeFromBuffer } = require("../utils/parseResume");
+// Use memory storage: we get req.file.buffer directly
 
 router.post("/upload-resume", upload.single("file"), async (req, res) => {
   try {
@@ -19,19 +19,12 @@ router.post("/upload-resume", upload.single("file"), async (req, res) => {
 
     // Debug log (optional, but helpful in Render logs):
     console.log(
-      "[upload-resume] file:",
-      originalName,
-      "mime:",
-      mimeType,
-      "size:",
-      buffer?.length
+      "[upload-resume] file:", originalName,
+      "mime:", mimeType,
+      "size:", buffer?.length
     );
 
-    const { title, sections, meta } = await parseResumeFromBuffer(
-      buffer,
-      mimeType,
-      originalName
-    );
+    const { title, sections, meta } = await parseResumeFromBuffer( buffer, mimeType, originalName );
 
     if (!sections || !Array.isArray(sections)) {
       console.error("[upload-resume] invalid sections:", sections);
@@ -41,11 +34,7 @@ router.post("/upload-resume", upload.single("file"), async (req, res) => {
     }
 
     // ✅ For now, just send parsed data back to the app
-    return res.json({
-      title,
-      sections,
-      meta,
-    });
+    return res.json({ title, sections, meta });
   } catch (err) {
     console.error("upload-resume error:", err);
     return res
