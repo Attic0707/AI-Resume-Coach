@@ -740,6 +740,22 @@ export default function ResumeEditorScreen({ route, navigation }) {
     }
   };
 
+  const handleModalSave = () => {
+    if (!activeModalField) return;
+    const config = MODAL_CONFIGS[activeModalField];
+    if (!config) {
+      closeModal();
+      return;
+    }
+
+    const prevValue =
+      fields.find((f) => f.key === activeModalField)?.value || "";
+    const formatted = config.format(modalData, prevValue, modalMode);
+
+    updateFieldValue(activeModalField, formatted);
+    closeModal();
+  };
+
   const openModal = (field, mode) => {
     const config = MODAL_CONFIGS[field.key];
     if (!config) {
@@ -751,9 +767,7 @@ export default function ResumeEditorScreen({ route, navigation }) {
     setActiveModalField(field.key);
 
     if (mode === "edit" && field.value) {
-      const parsed = config.parse
-        ? config.parse(field.value)
-        : { ...DEFAULT_MODAL_DATA, details: field.value };
+      const parsed = config.parse ? config.parse(field.value) : { ...DEFAULT_MODAL_DATA, details: field.value };
       setModalData(parsed);
     } else {
       setModalData({ ...DEFAULT_MODAL_DATA });
@@ -896,6 +910,178 @@ export default function ResumeEditorScreen({ route, navigation }) {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Parametric modal (experience, education, etc.) */}
+      <Modal visible={!!activeModalField} animationType="slide" onRequestClose={closeModal}>
+        <View style={[ styles.previewContainer, { backgroundColor: theme.bg }, ]} >
+          {(() => {
+            const config = activeModalField ? MODAL_CONFIGS[activeModalField] : null;
+            if (!config) return null;
+
+            const isExperience = activeModalField === "experience";
+            const isEducation = activeModalField === "education";
+            const isContact = activeModalField === "contact";
+
+            return (
+              <>
+                <View style={styles.previewHeader}>
+                  {/* Cancel */ }
+                  <TouchableOpacity onPress={closeModal}>
+                    <Text style={[ styles.backText, { color: theme.textSecondary }, ]} >
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Title */ }
+                  <Text style={[ styles.previewTitle, { color: theme.textPrimary }, ]} >
+                    {config.title}{" "}
+                    {modalMode === "edit" ? "(Edit)" : "(Add)"}
+                  </Text>
+
+                  {/* Save */ }
+                  <TouchableOpacity onPress={handleModalSave}>
+                    <Text style={[ styles.backText, { color: theme.accent, fontWeight: "600" }, ]} >
+                      Save
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView style={styles.previewScroll} contentContainerStyle={{ padding: 16, paddingBottom: 32, }} keyboardShouldPersistTaps="handled" >
+                  {/* Primary 1 */}
+                  {config.primary1Key && (
+                    <>
+                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
+                      {config.primary1Label}
+                    </Text>
+                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary1Key]} 
+                      placeholder={config.primary1Placeholder} placeholderTextColor={theme.textSecondary} 
+                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary1Key]: t, }))}/>
+                    </>
+                  )}
+
+                  {/* Primary 2 */}
+                  {config.primary2Key && (
+                    <>
+                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
+                      {config.primary2Label}
+                    </Text>
+                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary2Key]}
+                      placeholder={config.primary2Placeholder} placeholderTextColor={theme.textSecondary}
+                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary2Key]: t, })) }/>
+                    </>
+                  )}
+
+                  {/* Primary 3 */}
+                  {config.primary3Key && (
+                    <>
+                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
+                      {config.primary3Label}
+                    </Text>
+                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary3Key]}
+                      placeholder={config.primary3Placeholder} placeholderTextColor={theme.textSecondary}
+                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary3Key]: t, })) }/>
+                    </>
+                  )}
+
+                  {/* Primary 4 */}
+                  {config.primary4Key && (
+                    <>
+                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
+                      {config.primary4Label}
+                    </Text>
+                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary4Key]}
+                      placeholder={config.primary4Placeholder} placeholderTextColor={theme.textSecondary}
+                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary4Key]: t, })) }/>
+                    </>
+                  )}
+
+                  {/* Primary 5 */}
+                  {config.primary5Key && (
+                    <>
+                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
+                      {config.primary5Label}
+                    </Text>
+                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary5Key]}
+                      placeholder={config.primary5Placeholder} placeholderTextColor={theme.textSecondary}
+                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary5Key]: t, })) }/>
+                    </>
+                  )}
+
+                  {/* Dates row */}
+                  {config.supportsDates && (
+                    <>
+                    <View style={{ flexDirection: "row", marginTop: 10 }} >
+                      <View style={{ flex: 1, marginRight: 6 }}>
+                        <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
+                          Start Date
+                        </Text>
+                        <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData.startDate}
+                          placeholder={config.primary2Placeholder} placeholderTextColor={theme.textSecondary}
+                          onChangeText={(t) => setModalData((prev) => ({ ...prev, startDate: t, })) } />
+                      </View>
+
+                      <View style={{ flex: 1, marginLeft: 6 }}>
+                        <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
+                          End Date
+                        </Text>
+                        <TextInput
+                          style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, config.supportsCurrent && modalData.isCurrent && { opacity: 0.4, }, ]}
+                          editable={ !config.supportsCurrent || !modalData.isCurrent }
+                          value={ config.supportsCurrent && modalData.isCurrent ? "Current" : modalData.endDate }
+                          onChangeText={(t) => setModalData((prev) => ({ ...prev, endDate: t, })) }
+                          placeholder="e.g., 11/2024"
+                          placeholderTextColor={theme.textSecondary}
+                        />
+                      </View>
+                    </View>
+                    </>
+                  )}
+
+                  {/* Current toggle for experience */}
+                  {config.supportsCurrent && (
+                    <>
+                    <TouchableOpacity style={[ styles.currentToggle, { borderColor: theme.border, backgroundColor: modalData.isCurrent ? "rgba(34,197,94,0.1)" : "transparent", }, ]}
+                      onPress={toggleCurrent} >
+                      <View style={[ styles.checkbox, { borderColor: theme.border, backgroundColor: modalData.isCurrent ? "#22c55e" : "transparent", }, ]} />
+                      <Text style={[ styles.helperText, { color: theme.textSecondary }, ]} >
+                        Currently ongoing
+                      </Text>
+                    </TouchableOpacity>
+                    </>
+                  )}
+
+                  {/* Details + AI */}
+                  {config.supportsAI && (
+                    <>
+                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, marginBottom: 4, }} >
+                      <Text style={[ styles.fieldLabel, { color: theme.textPrimary }, ]} >
+                        Details / Highlights
+                      </Text>
+                      <TouchableOpacity style={[ styles.aiButton, { borderColor: theme.accent, marginLeft: "auto", }, ]} onPress={() => handleModalAi(config)} disabled={loadingModalAi} >
+                        {loadingModalAi ? (
+                          <ActivityIndicator size="small" />) : (
+                          <Text style={[ styles.aiButtonText, { color: theme.accent }, ]} >
+                            ✨ Improve with AI
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                      </View>
+                        <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, minHeight: 120, }, ]}
+                          multiline textAlignVertical="top" value={modalData.details}
+                          onChangeText={(t) => setModalData((prev) => ({ ...prev, details: t, })) }
+                          placeholder={
+                            isExperience
+                              ? "Describe your responsibilities and achievements.\nUse bullet-style lines. AI will help make them stronger."
+                              : "Add key modules, thesis, honors or notable achievements. AI can polish this."
+                          } placeholderTextColor={theme.textSecondary} />
+                      </>
+                  )}
+                </ScrollView>
+              </>
+            );
+          })()}
+        </View>
+      </Modal>
     </View>
   );
 }
