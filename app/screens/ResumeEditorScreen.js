@@ -1,8 +1,9 @@
 // app/screens/ResumeEditorScreen.js
 import React, { useContext, useMemo, useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Modal } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Modal, Platform } from "react-native";
 import { AppContext, saveDocument } from "../context/AppContext";
 import { improveAboutMe, improveSkillsSection, improveProjectsSection, improveExpertiseSection, improvePublishesSection, improveExperienceDetails, improveEducationDetails } from "../utils/api";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 const AI_CHAR_LIMIT = 20000;
 
@@ -511,6 +512,64 @@ export default function ResumeEditorScreen({ route, navigation }) {
   const [modalMode, setModalMode] = useState("create"); // "create" | "edit"
   const [modalData, setModalData] = useState(DEFAULT_MODAL_DATA);
   const [loadingModalAi, setLoadingModalAi] = useState(false);
+
+  // 🔹 Date picker state
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [datePickerTarget, setDatePickerTarget] = useState(null); // "startDate" | "endDate"
+  const [datePickerValue, setDatePickerValue] = useState(new Date());
+
+  const formatDateLabel = (raw) => {
+    if (!raw) return "";
+    const d = new Date(raw);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString(); // uses device locale – "standard"
+    }
+    return raw;
+  };
+
+  const openDatePicker = (targetKey) => {
+    setDatePickerTarget(targetKey);
+
+    // if we already have a date string → try to parse it
+    const raw = modalData[targetKey];
+    let initial = new Date();
+    if (raw) {
+      const parsed = new Date(raw);
+      if (!isNaN(parsed.getTime())) {
+        initial = parsed;
+      }
+    }
+    setDatePickerValue(initial);
+    setDatePickerVisible(true);
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    if (selectedDate) {
+      setDatePickerValue(selectedDate);
+    }
+  };
+
+  const handleDateSave = () => {
+    if (!datePickerTarget) {
+      setDatePickerVisible(false);
+      return;
+    }
+
+    const iso = datePickerValue.toISOString().split("T")[0]; // "YYYY-MM-DD"
+
+    setModalData((prev) => ({
+      ...prev,
+      [datePickerTarget]: iso,
+    }));
+
+    setDatePickerVisible(false);
+    setDatePickerTarget(null);
+  };
+
+  const handleDateCancel = () => {
+    setDatePickerVisible(false);
+    setDatePickerTarget(null);
+  };
 
   // ---------- Init fields from initialSections ----------
   useEffect(() => {
@@ -1032,28 +1091,30 @@ export default function ResumeEditorScreen({ route, navigation }) {
                   {/* Dates row */}
                   {config.supportsDates && (
                     <>
-                    <View style={{ flexDirection: "row", marginTop: 10 }} >
+                    <View style={{ flexDirection: "row", marginTop: 10 }}>
+                      {/* Start Date */}
                       <View style={{ flex: 1, marginRight: 6 }}>
-                        <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
+                        <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4 }, ]} >
                           Start Date
                         </Text>
-                        <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData.startDate}
-                          placeholder={config.primary2Placeholder} placeholderTextColor={theme.textSecondary}
-                          onChangeText={(t) => setModalData((prev) => ({ ...prev, startDate: t, })) } />
+                        <TouchableOpacity style={[ styles.textInput, { justifyContent: "center", borderColor: theme.border, backgroundColor: theme.bg, }, ]} onPress={() => openDatePicker("startDate")} >
+                          <Text style={{ color: modalData.startDate ? theme.textPrimary : theme.textSecondary, fontSize: 13, }} >
+                            {modalData.startDate ? formatDateLabel(modalData.startDate) : language === "tr" ? "Başlangıç tarihi seç" : "Select start date"}
+                          </Text>
+                        </TouchableOpacity>
                       </View>
 
+                      {/* End Date */}
                       <View style={{ flex: 1, marginLeft: 6 }}>
-                        <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
+                        <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4 }, ]} >
                           End Date
                         </Text>
-                        <TextInput
-                          style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, config.supportsCurrent && modalData.isCurrent && { opacity: 0.4, }, ]}
-                          editable={ !config.supportsCurrent || !modalData.isCurrent }
-                          value={ config.supportsCurrent && modalData.isCurrent ? "Current" : modalData.endDate }
-                          onChangeText={(t) => setModalData((prev) => ({ ...prev, endDate: t, })) }
-                          placeholder="e.g., 11/2024"
-                          placeholderTextColor={theme.textSecondary}
-                        />
+                        <TouchableOpacity style={[ styles.textInput, { justifyContent: "center", borderColor: theme.border, backgroundColor: theme.bg, ...(config.supportsCurrent && modalData.isCurrent && { opacity: 0.4 }), }, ]} 
+                          disabled={config.supportsCurrent && modalData.isCurrent} onPress={() => !(config.supportsCurrent && modalData.isCurrent) && openDatePicker("endDate") } >
+                          <Text style={{ color: config.supportsCurrent && modalData.isCurrent ? theme.textSecondary : modalData.endDate ? theme.textPrimary : theme.textSecondary, fontSize: 13, }} >
+                            {config.supportsCurrent && modalData.isCurrent ? "Current" : modalData.endDate ? formatDateLabel(modalData.endDate) : language === "tr" ? "Bitiş tarihi seç" : "Select end date"}
+                          </Text>
+                        </TouchableOpacity>
                       </View>
                     </View>
                     </>
@@ -1103,6 +1164,57 @@ export default function ResumeEditorScreen({ route, navigation }) {
             );
           })()}
         </View>
+        {/* {datePickerVisible && ( <DateTimePicker value={datePickerValue} mode="date" display={Platform.OS === "ios" ? "spinner" : "default"} onChange={handleDateChange} /> )} */}
+
+        {/* Date Picker */}
+        {datePickerVisible && (
+          <View style={styles.datePickerOverlay}>
+            <View style={[styles.datePickerCard, { backgroundColor: theme.bgCard }]}>
+              {/* Header with Cancel / Save */}
+              <View style={styles.datePickerHeader}>
+                <TouchableOpacity onPress={handleDateCancel}>
+                  <Text style={[styles.backText, { color: theme.textSecondary }]}>
+                    {language === "tr" ? "İptal" : "Cancel"}
+                  </Text>
+                </TouchableOpacity>
+
+                <Text
+                  style={[
+                    styles.previewTitle,
+                    { color: theme.textPrimary, fontSize: 16 },
+                  ]}
+                >
+                  {datePickerTarget === "startDate"
+                    ? language === "tr"
+                      ? "Başlangıç Tarihi"
+                      : "Start Date"
+                    : language === "tr"
+                    ? "Bitiş Tarihi"
+                    : "End Date"}
+                </Text>
+
+                <TouchableOpacity onPress={handleDateSave}>
+                  <Text
+                    style={[
+                      styles.backText,
+                      { color: theme.accent, fontWeight: "600" },
+                    ]}
+                  >
+                    {language === "tr" ? "Kaydet" : "Save"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Actual picker */}
+              <DateTimePicker
+                value={datePickerValue}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "calendar"}
+                onChange={handleDateChange}
+              />
+            </View>
+          </View>
+        )}
       </Modal>
     </View>
   );
@@ -1316,5 +1428,28 @@ const styles = StyleSheet.create({
   },
   languageButtonTextActive: {
     color: "#e5e7eb",
+  },
+  // date picker
+  datePickerOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: 0,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  datePickerCard: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: Platform.OS === "ios" ? 24 : 12,
+    paddingTop: 8,
+  },
+  datePickerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginBottom: 4,
   },
 });
