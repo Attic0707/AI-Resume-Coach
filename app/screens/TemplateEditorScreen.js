@@ -35,8 +35,7 @@ const BASE_FIELDS = [
   {
     key: "experience",
     label: "Work Experience",
-    placeholder:
-      "List roles, companies, dates and 3–6 strong bullet points with measurable impact.",
+    placeholder: "List roles, companies, dates and 3–6 strong bullet points with measurable impact.",
     multiline: true,
     isForAi: false,
     isModalField: true
@@ -44,8 +43,7 @@ const BASE_FIELDS = [
   {
     key: "education",
     label: "Education",
-    placeholder:
-      "Degrees, institutions, graduation years, key coursework or achievements.",
+    placeholder: "Degrees, institutions, graduation years, key coursework or achievements.",
     multiline: true,
     isForAi: false,
     isModalField: true
@@ -53,8 +51,7 @@ const BASE_FIELDS = [
   {
     key: "skills",
     label: "Skills",
-    placeholder:
-      "Hard skills, tools, technologies and languages. You can separate with commas or bullets.",
+    placeholder: "Hard skills, tools, technologies and languages. You can separate with commas or bullets.",
     multiline: true,
     isForAi: true,
     isModalField: false
@@ -62,8 +59,7 @@ const BASE_FIELDS = [
   {
     key: "projects",
     label: "Projects",
-    placeholder:
-      "Key projects, portfolio items, open source, side products – especially useful for creative/tech roles.",
+    placeholder: "Key projects, portfolio items, open source, side products – especially useful for creative/tech roles.",
     multiline: true,
     isForAi: true,
     isModalField: false
@@ -71,8 +67,7 @@ const BASE_FIELDS = [
   {
     key: "languages",
     label: "Languages",
-    placeholder:
-      "Spoken languages for business communication",
+    placeholder: "Spoken languages for business communication",
     multiline: true,
     isForAi: false,
     isModalField: false
@@ -80,8 +75,7 @@ const BASE_FIELDS = [
   {
     key: "expertise",
     label: "Expertise",
-    placeholder:
-      "Areas of experties with which you feel confident",
+    placeholder: "Areas of experties with which you feel confident",
     multiline: true,
     isForAi: true,
     isModalField: false
@@ -89,8 +83,7 @@ const BASE_FIELDS = [
   {
     key: "certificates",
     label: "Certificates",
-    placeholder:
-      "Official certificates you hold to display your experience / knowledge in a particular area",
+    placeholder: "Official certificates you hold to display your experience / knowledge in a particular area",
     multiline: true,
     isForAi: false,
     isModalField: true
@@ -98,8 +91,7 @@ const BASE_FIELDS = [
   {
     key: "publishes",
     label: "Published Works / Rewards",
-    placeholder:
-      "Any kind of reward you received or any published, acclaimed work is displayed here",
+    placeholder: "Any kind of reward you received or any published, acclaimed work is displayed here",
     multiline: true,
     isForAi: true,
     isModalField: false
@@ -107,8 +99,7 @@ const BASE_FIELDS = [
   {
     key: "referrals",
     label: "Referrals",
-    placeholder:
-      "Referrals from a previous work place or a relevant person to endorse your skills / experience",
+    placeholder: "Referrals from a previous work place or a relevant person to endorse your skills / experience",
     multiline: true,
     isForAi: false,
     isModalField: true
@@ -462,6 +453,16 @@ const stripCurrentFromExperience = (text = "") => {
 };
 const AI_CHAR_LIMIT = 20000;
 
+const AI_API_BY_FIELD = {
+  aboutMe: improveAboutMe,
+  skills: improveSkillsSection,
+  projects: improveProjectsSection,
+  expertise: improveExpertiseSection,
+  publishes: improvePublishesSection,
+  experience_details: improveExperienceDetails,
+  education_details: improveEducationDetails,
+};
+
 export default function TemplateEditorScreen({ route, navigation }) {
   const { theme, isPro, freeCreditsLeft, consumeCredit, language, setLanguage } = useContext(AppContext);
   const { templateId, templateName } = route.params || {};
@@ -487,15 +488,6 @@ export default function TemplateEditorScreen({ route, navigation }) {
   const [modalData, setModalData] = useState(DEFAULT_MODAL_DATA);
   const [loadingModalAi, setLoadingModalAi] = useState(false);
 
-  const AI_API_BY_FIELD = {
-    aboutMe: improveAboutMe,
-    skills: improveSkillsSection,
-    projects: improveProjectsSection,
-    expertise: improveExpertiseSection,
-    publishes: improvePublishesSection,
-    experience_details: improveExperienceDetails,
-    education_details: improveEducationDetails,
-  };
 
   const checkPaywall = () => {
     if (isPro) return true;
@@ -531,10 +523,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
 
   const updateFieldValue = (key, text) => {
     setFields((prev) =>
-      prev.map((f) =>
-        f.key === key ? { ...f, value: text } : f
-      )
-    );
+      prev.map((f) => f.key === key ? { ...f, value: text } : f));
   };
 
   const buildPreviewText = () => {

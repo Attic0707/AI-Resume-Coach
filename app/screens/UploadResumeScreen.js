@@ -143,8 +143,8 @@ export default function UploadResumeScreen({ navigation }) {
         <Text style={[ styles.hintText, { color: theme.textSecondary }, ]} >
           •{" "}
           {isTurkish
-            ? "Metin tabanlı PDF veya DOCX kullan (tarama görüntüsü olmasın)."
-            : "Use a text-based PDF or DOCX (not a scanned image)."}
+            ? "Metin tabanlı DOCX dosyası kullan (tarama görüntüsü olmasın)."
+            : "Use a text-based DOCX file (not a scanned image)."}
         </Text>
         <Text style={[ styles.hintText, { color: theme.textSecondary }, ]} >
           •{" "}
