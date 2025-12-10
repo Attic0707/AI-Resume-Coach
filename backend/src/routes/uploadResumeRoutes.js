@@ -26,15 +26,6 @@ router.post("/upload-resume", upload.single("file"), async (req, res) => {
 
     const { title, sections, meta } = await parseResumeFromBuffer( buffer, mimeType, originalName );
 
-    // DEBUG: log what we actually parsed
-    console.log("[upload-resume] parsed title:", title);
-    console.log(
-      "[upload-resume] sample sections:",
-      sections
-        .slice(0, 4) // just a few, to avoid huge logs
-        .map((s) => ({ key: s.key, len: (s.value || "").length }))
-    );
-
     if (!sections || !Array.isArray(sections)) {
       console.error("[upload-resume] invalid sections:", sections);
       return res
@@ -46,6 +37,14 @@ router.post("/upload-resume", upload.single("file"), async (req, res) => {
     return res.json({ title, sections, meta });
   } catch (err) {
     console.error("upload-resume error:", err);
+
+    if (err.message === "NO_TEXT_FOUND_IN_FILE") {
+      return res.status(400).json({
+        error:
+          "No readable text was found in this file. Please upload a DOCX or a text-based PDF (not a scanned image).",
+      });
+    }
+    
     return res
       .status(500)
       .json({ error: "Failed to parse resume file" });

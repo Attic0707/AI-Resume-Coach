@@ -32,6 +32,7 @@ const SECTION_DEFS = [
       "SUMMARY",
       "PROFESSIONAL SUMMARY",
       "PROFILE",
+      "PROFESSIONAL PROFILE",
       "ABOUT ME",
       "CAREER SUMMARY",
       "ABOUT",
@@ -45,15 +46,27 @@ const SECTION_DEFS = [
       "PROFESSIONAL EXPERIENCE",
       "EMPLOYMENT HISTORY",
       "CAREER HISTORY",
+      "WORK HISTORY",
     ],
   },
   {
     key: "education",
-    labels: ["EDUCATION", "EDUCATION & TRAINING", "ACADEMIC BACKGROUND"],
+    labels: [
+      "EDUCATION",
+      "EDUCATION & TRAINING",
+      "ACADEMIC BACKGROUND",
+      "EDUCATION AND QUALIFICATIONS",
+    ],
   },
   {
     key: "skills",
-    labels: ["SKILLS", "KEY SKILLS", "TECHNICAL SKILLS", "CORE SKILLS"],
+    labels: [
+      "SKILLS",
+      "KEY SKILLS",
+      "TECHNICAL SKILLS",
+      "CORE SKILLS",
+      "CORE COMPETENCIES",
+    ],
   },
   {
     key: "projects",
@@ -267,6 +280,12 @@ async function parseResumeFromBuffer(buffer, mimeType, originalName) {
   const words = text.split(/\s+/g).filter(Boolean);
   meta.wordCount = words.length;
   meta.charCount = text.length;
+
+  // Very little or no text -> likely scanned/image PDF or weird export
+  // Let the route translate this into a user-friendly error.
+  if (!meta.charCount || meta.charCount < 50) {
+    throw new Error("NO_TEXT_FOUND_IN_FILE");
+  }
 
   // Use heuristics to split into sections
   const sectionMap = splitIntoSections(text);
