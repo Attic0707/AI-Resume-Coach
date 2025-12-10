@@ -165,17 +165,20 @@ function inferContactSection(allLines, explicitContactBlock) {
  */
 function splitIntoSections(text) {
   const lines = text.split("\n");
-
-  // mark section headers with their indices
   const headers = [];
 
+  // 1) Detect section headers
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i].trim();
     if (!raw) continue;
     const upper = raw.toUpperCase();
 
     for (const def of SECTION_DEFS) {
-      if (def.labels.includes(upper)) {
+      const isMatch = def.labels.some(
+        (label) =>
+          upper === label || upper.startsWith(label + ":")
+      );
+      if (isMatch) {
         headers.push({
           index: i,
           key: def.key,
@@ -186,21 +189,29 @@ function splitIntoSections(text) {
     }
   }
 
-  // If no headers found, treat entire body as aboutMe
+  // 2) Name/headline from top
+  const { name, headline } = extractHeaderNameAndHeadline(lines);
+
+  // 3) If no headers at all -> treat entire text as aboutMe
   if (!headers.length) {
-    return { aboutMe: text };
+    const contact = inferContactSection(lines, "");
+    return {
+      name: name || "",
+      headline: headline || "",
+      aboutMe: text,
+      contact,
+    };
   }
 
-  // sort by index just in case
+  // 4) Otherwise, slice between headers
   headers.sort((a, b) => a.index - b.index);
-
   const sections = {};
 
   for (let h = 0; h < headers.length; h++) {
     const current = headers[h];
     const next = headers[h + 1];
 
-    const start = current.index + 1; // content begins after header line
+    const start = current.index + 1;
     const end = next ? next.index : lines.length;
 
     const blockLines = lines.slice(start, end);
@@ -210,16 +221,27 @@ function splitIntoSections(text) {
       if (!sections[current.key]) {
         sections[current.key] = blockText;
       } else {
-        // in case the same section appears multiple times, append
         sections[current.key] += `\n\n${blockText}`;
       }
     }
   }
 
-  // name/headline detection
-  const { name, headline } = extractHeaderNameAndHeadline(lines);
+  // 5) Top-of-document block before first header -> good candidate for About Me
+  const firstHeaderIndex = headers[0].index;
+  if (firstHeaderIndex > 0) {
+    const topBlockLines = lines.slice(0, firstHeaderIndex);
+    const topBlockText = topBlockLines.join("\n").trim();
 
-  // contact inference (explicit or guessed)
+    if (topBlockText) {
+      if (!sections.aboutMe) {
+        sections.aboutMe = topBlockText;
+      } else {
+        sections.aboutMe = `${topBlockText}\n\n${sections.aboutMe}`;
+      }
+    }
+  }
+
+  // 6) Contact inference
   const contact = inferContactSection(lines, sections.contact || "");
 
   return {
