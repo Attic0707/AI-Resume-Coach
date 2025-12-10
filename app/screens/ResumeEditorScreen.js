@@ -384,28 +384,29 @@ const MODAL_CONFIGS = {
         .filter(Boolean);
       if (!lines.length) return data;
 
-      const header = lines[0] || "";
-      const [first, second, third ] = header.split(",").map((s) => s.trim());
-      // naive mapping
-      data.certName = first || "";
-      data.issuer = second || "";
-      data.url = third || "";
+      lines.forEach((line) => {
+        const lower = line.toLowerCase();
+
+        if (lower.startsWith("certName:")) {
+          data.certName = line.split(":").slice(1).join(":").trim();
+        } else if (lower.startsWith("issuer:")) {
+          data.issuer = line.split(":").slice(1).join(":").trim();
+        } else if (lower.startsWith("url:")) {
+          data.url = line.split(":").slice(1).join(":").trim();
+        }
+      });
 
       return data;
     },
     format: (data, previousValue, mode) => {
       const { certName, issuer, url } = data;
-
-      const headerLine = [certName, issuer, url].filter(Boolean).join(", ");
       const lines = [];
-
-      if (headerLine) lines.push(headerLine);
+      if (certName) lines.push(`Certificate Name: ${certName}`);
+      if (issuer) lines.push(`Issued by: ${issuer}`);
+      if (url) lines.push(`Confirm: ${url}`);
 
       const block = lines.join("\n");
-
-      if (mode === "edit" || !previousValue?.trim()) return block;
-
-      return `${previousValue.trim()}\n\n${block}`;
+      return block;
     },
   },
 
@@ -435,30 +436,29 @@ const MODAL_CONFIGS = {
         .filter(Boolean);
       if (!lines.length) return data;
 
-      const header = lines[0] || "";
-      const [first, second, third] = header.split(",").map((s) => s.trim());
+      lines.forEach((line) => {
+        const lower = line.toLowerCase();
 
-      data.refName = first || "";
-      data.refCompany = second || "";
-      data.contact = third || "";
+        if (lower.startsWith("refName:")) {
+          data.refName = line.split(":").slice(1).join(":").trim();
+        } else if (lower.startsWith("refCompany:")) {
+          data.refCompany = line.split(":").slice(1).join(":").trim();
+        } else if (lower.startsWith("contact:")) {
+          data.contact = line.split(":").slice(1).join(":").trim();
+        }
+      });
 
       return data;
     },
     format: (data, previousValue, mode) => {
       const { refName, refCompany, contact } = data;
-
-      const headerLine = [refName, refCompany, contact]
-        .filter(Boolean)
-        .join(", ");
       const lines = [];
-
-      if (headerLine) lines.push(headerLine);
+      if (refName) lines.push(`Reference Name: ${refName}`);
+      if (refCompany) lines.push(`Company: ${refCompany}`);
+      if (contact) lines.push(`Contact Info: ${contact}`);
 
       const block = lines.join("\n");
-
-      if (mode === "edit" || !previousValue?.trim()) return block;
-
-      return `${previousValue.trim()}\n\n${block}`;
+      return block;
     },
   },
 };
@@ -569,6 +569,61 @@ export default function ResumeEditorScreen({ route, navigation }) {
   const handleDateCancel = () => {
     setDatePickerVisible(false);
     setDatePickerTarget(null);
+  };
+
+  const parseISODate = (str) => {
+    if (!str) return null;
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const compareDates = (a, b) => {
+    // returns -1 if a<b, 0 if equal, 1 if a>b
+    const da = parseISODate(a);
+    const db = parseISODate(b);
+    if (!da || !db) return 0;
+    if (da.getTime() < db.getTime()) return -1;
+    if (da.getTime() > db.getTime()) return 1;
+    return 0;
+  };
+
+  const validateModalDates = (config, modalData, isTurkish) => {
+    const { supportsDates, supportsCurrent } = config || {};
+    if (!supportsDates) return { ok: true };
+
+    const { startDate, endDate, isCurrent } = modalData || {};
+
+    // Experience: if "current", require start date
+    if (supportsCurrent && isCurrent) {
+      if (!startDate) {
+        return {
+          ok: false,
+          message: isTurkish
+            ? "Devam eden bir pozisyon için başlangıç tarihi zorunludur."
+            : "Start date is required for a current position.",
+        };
+      }
+      // endDate is ignored / forced to blank in your toggle; nothing else to check
+      return { ok: true };
+    }
+
+    // If only one of them is set, that's OK (e.g., just graduation year)
+    if (!startDate || !endDate) {
+      return { ok: true };
+    }
+
+    const cmp = compareDates(startDate, endDate);
+    if (cmp === 1) {
+      // start > end
+      return {
+        ok: false,
+        message: isTurkish
+          ? "Bitiş tarihi, başlangıç tarihinden önce olamaz."
+          : "End date cannot be earlier than start date.",
+      };
+    }
+
+    return { ok: true };
   };
 
   // ---------- Init fields from initialSections ----------
@@ -830,6 +885,12 @@ export default function ResumeEditorScreen({ route, navigation }) {
       return;
     }
 
+    const validation = validateModalDates(config, modalData, isTurkish);
+    if (!validation.ok) {
+      Alert.alert( isTurkish ? "Geçersiz tarih" : "Invalid date", validation.message );
+      return;
+    }
+
     const prevValue = fields.find((f) => f.key === activeModalField)?.value || "";
     const formatted = config.format(modalData, prevValue, modalMode);
 
@@ -943,8 +1004,8 @@ export default function ResumeEditorScreen({ route, navigation }) {
                     </TouchableOpacity>
                   )}
                   {isModalField && modalConfig && (
-                    <TouchableOpacity style={[ styles.smallIconButton, { borderColor: theme.border }, ]} onPress={() => openModal(field, "create")} >
-                      <Text style={[ styles.smallIconButtonText, { color: theme.textPrimary }, ]} > + </Text>
+                    <TouchableOpacity style={[ styles.smallIconButton, { borderColor: theme.border }, ]} onPress={() => openModal(field, fieldHasValue ? "edit" : "create")} >
+                      <Text style={[ styles.smallIconButtonText, { color: theme.textPrimary }, ]} > ✎ </Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -956,23 +1017,16 @@ export default function ResumeEditorScreen({ route, navigation }) {
                 </Text>
               ) : null}
 
-              {!isModalField ? (
-                <View style={{ position: "relative" }}>
-                  <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, minHeight: isMultiline ? 80 : 40, backgroundColor: theme.bg, }, ]}
-                    multiline={isMultiline} value={field.value} onChangeText={(text) => updateFieldValue(field.key, text) } maxLength={isValidForAI ? AI_CHAR_LIMIT : undefined} textAlignVertical={isMultiline ? "top" : "center"} />
+              <View style={{ position: "relative" }}>
+                <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, minHeight: isMultiline ? 80 : 40, backgroundColor: theme.bg, }, ]}
+                  multiline={isMultiline} value={field.value} onChangeText={(text) => updateFieldValue(field.key, text) } maxLength={isValidForAI ? AI_CHAR_LIMIT : undefined} textAlignVertical={isMultiline ? "top" : "center"} />
 
-                  {isValidForAI && (
-                    <Text style={styles.charCounter}>
-                      {field.value?.length || 0} / {AI_CHAR_LIMIT}
-                    </Text>
-                  )}
-                </View>) : (
-                <TouchableOpacity activeOpacity={0.9} onPress={() => openModal( field, fieldHasValue ? "edit" : "create" ) } style={[ styles.readOnlyBox, { borderColor: theme.border }, ]} >
-                  <Text style={{ color: fieldHasValue ? theme.textPrimary : theme.textSecondary, fontSize: 13, }} >
-                    {fieldHasValue ? field.value : "No details added yet. Tap to add more details."}
+                {isValidForAI && (
+                  <Text style={styles.charCounter}>
+                    {field.value?.length || 0} / {AI_CHAR_LIMIT}
                   </Text>
-                </TouchableOpacity>
-              )}
+                )}
+              </View>
             </View>
           );
         })}
@@ -993,176 +1047,179 @@ export default function ResumeEditorScreen({ route, navigation }) {
       </View>
 
       {/* Parametric modal (experience, education, etc.) */}
-      <Modal visible={!!activeModalField} animationType="slide" onRequestClose={closeModal}>
-        <View style={[ styles.previewContainer, { backgroundColor: theme.bg }, ]} >
-          {(() => {
-            const config = activeModalField ? MODAL_CONFIGS[activeModalField] : null;
-            if (!config) return null;
+      <Modal visible={!!activeModalField} animationType="fade" onRequestClose={closeModal}>
+        <View style={[ styles.modalBackdrop, ]} >
+          <View style={styles.modalCard}>
+            {(() => {
+              const config = activeModalField ? MODAL_CONFIGS[activeModalField] : null;
+              if (!config) return null;
 
-            const isExperience = activeModalField === "experience";
-            const isEducation = activeModalField === "education";
-            const isContact = activeModalField === "contact";
+              const isExperience = activeModalField === "experience";
+              const isEducation = activeModalField === "education";
+              const isContact = activeModalField === "contact";
 
-            return (
-              <>
-                <View style={styles.previewHeader}>
-                  {/* Cancel */ }
-                  <TouchableOpacity onPress={closeModal}>
-                    <Text style={[ styles.backText, { color: theme.textSecondary }, ]} >
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Title */ }
-                  <Text style={[ styles.previewTitle, { color: theme.textPrimary }, ]} >
-                    {config.title}{" "}
-                    {modalMode === "edit" ? "(Edit)" : "(Add)"}
-                  </Text>
-
-                  {/* Save */ }
-                  <TouchableOpacity onPress={handleModalSave}>
-                    <Text style={[ styles.backText, { color: theme.accent, fontWeight: "600" }, ]} >
-                      Save
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <ScrollView style={styles.previewScroll} contentContainerStyle={{ padding: 16, paddingBottom: 32, }} keyboardShouldPersistTaps="handled" >
-                  {/* Primary 1 */}
-                  {config.primary1Key && (
-                    <>
-                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
-                      {config.primary1Label}
-                    </Text>
-                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary1Key]} 
-                      placeholder={config.primary1Placeholder} placeholderTextColor={theme.textSecondary} 
-                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary1Key]: t, }))}/>
-                    </>
-                  )}
-
-                  {/* Primary 2 */}
-                  {config.primary2Key && (
-                    <>
-                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
-                      {config.primary2Label}
-                    </Text>
-                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary2Key]}
-                      placeholder={config.primary2Placeholder} placeholderTextColor={theme.textSecondary}
-                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary2Key]: t, })) }/>
-                    </>
-                  )}
-
-                  {/* Primary 3 */}
-                  {config.primary3Key && (
-                    <>
-                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
-                      {config.primary3Label}
-                    </Text>
-                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary3Key]}
-                      placeholder={config.primary3Placeholder} placeholderTextColor={theme.textSecondary}
-                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary3Key]: t, })) }/>
-                    </>
-                  )}
-
-                  {/* Primary 4 */}
-                  {config.primary4Key && (
-                    <>
-                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
-                      {config.primary4Label}
-                    </Text>
-                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary4Key]}
-                      placeholder={config.primary4Placeholder} placeholderTextColor={theme.textSecondary}
-                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary4Key]: t, })) }/>
-                    </>
-                  )}
-
-                  {/* Primary 5 */}
-                  {config.primary5Key && (
-                    <>
-                    <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
-                      {config.primary5Label}
-                    </Text>
-                    <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary5Key]}
-                      placeholder={config.primary5Placeholder} placeholderTextColor={theme.textSecondary}
-                      onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary5Key]: t, })) }/>
-                    </>
-                  )}
-
-                  {/* Dates row */}
-                  {config.supportsDates && (
-                    <>
-                    <View style={{ flexDirection: "row", marginTop: 10 }}>
-                      {/* Start Date */}
-                      <View style={{ flex: 1, marginRight: 6 }}>
-                        <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4 }, ]} >
-                          Start Date
-                        </Text>
-                        <TouchableOpacity style={[ styles.textInput, { justifyContent: "center", borderColor: theme.border, backgroundColor: theme.bg, }, ]} onPress={() => openDatePicker("startDate")} >
-                          <Text style={{ color: modalData.startDate ? theme.textPrimary : theme.textSecondary, fontSize: 13, }} >
-                            {modalData.startDate ? formatDateLabel(modalData.startDate) : language === "tr" ? "Başlangıç tarihi seç" : "Select start date"}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-
-                      {/* End Date */}
-                      <View style={{ flex: 1, marginLeft: 6 }}>
-                        <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4 }, ]} >
-                          End Date
-                        </Text>
-                        <TouchableOpacity style={[ styles.textInput, { justifyContent: "center", borderColor: theme.border, backgroundColor: theme.bg, ...(config.supportsCurrent && modalData.isCurrent && { opacity: 0.4 }), }, ]} 
-                          disabled={config.supportsCurrent && modalData.isCurrent} onPress={() => !(config.supportsCurrent && modalData.isCurrent) && openDatePicker("endDate") } >
-                          <Text style={{ color: config.supportsCurrent && modalData.isCurrent ? theme.textSecondary : modalData.endDate ? theme.textPrimary : theme.textSecondary, fontSize: 13, }} >
-                            {config.supportsCurrent && modalData.isCurrent ? "Current" : modalData.endDate ? formatDateLabel(modalData.endDate) : language === "tr" ? "Bitiş tarihi seç" : "Select end date"}
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                    </>
-                  )}
-
-                  {/* Current toggle for experience */}
-                  {config.supportsCurrent && (
-                    <>
-                    <TouchableOpacity style={[ styles.currentToggle, { borderColor: theme.border, backgroundColor: modalData.isCurrent ? "rgba(34,197,94,0.1)" : "transparent", }, ]}
-                      onPress={toggleCurrent} >
-                      <View style={[ styles.checkbox, { borderColor: theme.border, backgroundColor: modalData.isCurrent ? "#22c55e" : "transparent", }, ]} />
-                      <Text style={[ styles.helperText, { color: theme.textSecondary }, ]} >
-                        Currently ongoing
+              return (
+                <>
+                  <View style={styles.previewHeader}>
+                    {/* Cancel */ }
+                    <TouchableOpacity onPress={closeModal}>
+                      <Text style={[ styles.backText, { color: theme.textSecondary }, ]} >
+                        Cancel
                       </Text>
                     </TouchableOpacity>
-                    </>
-                  )}
 
-                  {/* Details + AI */}
-                  {config.supportsAI && (
-                    <>
-                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, marginBottom: 4, }} >
-                      <Text style={[ styles.fieldLabel, { color: theme.textPrimary }, ]} >
-                        Details / Highlights
+                    {/* Title */ }
+                    <Text style={[ styles.previewTitle, { color: theme.textPrimary }, ]} >
+                      {config.title}{" "}
+                      {modalMode === "edit" ? "(Edit)" : "(Add)"}
+                    </Text>
+
+                    {/* Save */ }
+                    <TouchableOpacity onPress={handleModalSave}>
+                      <Text style={[ styles.backText, { color: theme.accent, fontWeight: "600" }, ]} >
+                        Save
                       </Text>
-                      <TouchableOpacity style={[ styles.aiButton, { borderColor: theme.accent, marginLeft: "auto", }, ]} onPress={() => handleModalAi(config)} disabled={loadingModalAi} >
-                        {loadingModalAi ? (
-                          <ActivityIndicator size="small" />) : (
-                          <Text style={[ styles.aiButtonText, { color: theme.accent }, ]} >
-                            ✨ Improve with AI
-                          </Text>
-                        )}
-                      </TouchableOpacity>
-                      </View>
-                        <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, minHeight: 120, }, ]}
-                          multiline textAlignVertical="top" value={modalData.details}
-                          onChangeText={(t) => setModalData((prev) => ({ ...prev, details: t, })) }
-                          placeholder={
-                            isExperience
-                              ? "Describe your responsibilities and achievements.\nUse bullet-style lines. AI will help make them stronger."
-                              : "Add key modules, thesis, honors or notable achievements. AI can polish this."
-                          } placeholderTextColor={theme.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <ScrollView style={styles.previewScroll} contentContainerStyle={{ padding: 16, paddingBottom: 32, }} keyboardShouldPersistTaps="handled" >
+                    {/* Primary 1 */}
+                    {config.primary1Key && (
+                      <>
+                      <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
+                        {config.primary1Label}
+                      </Text>
+                      <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary1Key]} 
+                        placeholder={config.primary1Placeholder} placeholderTextColor={theme.textSecondary} 
+                        onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary1Key]: t, }))}/>
                       </>
-                  )}
-                </ScrollView>
-              </>
-            );
-          })()}
+                    )}
+
+                    {/* Primary 2 */}
+                    {config.primary2Key && (
+                      <>
+                      <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
+                        {config.primary2Label}
+                      </Text>
+                      <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary2Key]}
+                        placeholder={config.primary2Placeholder} placeholderTextColor={theme.textSecondary}
+                        onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary2Key]: t, })) }/>
+                      </>
+                    )}
+
+                    {/* Primary 3 */}
+                    {config.primary3Key && (
+                      <>
+                      <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
+                        {config.primary3Label}
+                      </Text>
+                      <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary3Key]}
+                        placeholder={config.primary3Placeholder} placeholderTextColor={theme.textSecondary}
+                        onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary3Key]: t, })) }/>
+                      </>
+                    )}
+
+                    {/* Primary 4 */}
+                    {config.primary4Key && (
+                      <>
+                      <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
+                        {config.primary4Label}
+                      </Text>
+                      <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary4Key]}
+                        placeholder={config.primary4Placeholder} placeholderTextColor={theme.textSecondary}
+                        onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary4Key]: t, })) }/>
+                      </>
+                    )}
+
+                    {/* Primary 5 */}
+                    {config.primary5Key && (
+                      <>
+                      <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, marginTop: 10, }, ]} >
+                        {config.primary5Label}
+                      </Text>
+                      <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData[config.primary5Key]}
+                        placeholder={config.primary5Placeholder} placeholderTextColor={theme.textSecondary}
+                        onChangeText={(t) => setModalData((prev) => ({ ...prev, [config.primary5Key]: t, })) }/>
+                      </>
+                    )}
+
+                    {/* Dates row */}
+                    {config.supportsDates && (
+                      <>
+                      <View style={{ flexDirection: "row", marginTop: 10 }}>
+                        {/* Start Date */}
+                        <View style={{ flex: 1, marginRight: 6 }}>
+                          <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4 }, ]} >
+                            Start Date
+                          </Text>
+                          <TouchableOpacity style={[ styles.textInput, { justifyContent: "center", borderColor: theme.border, backgroundColor: theme.bg, }, ]} onPress={() => openDatePicker("startDate")} >
+                            <Text style={{ color: modalData.startDate ? theme.textPrimary : theme.textSecondary, fontSize: 13, }} >
+                              {modalData.startDate ? formatDateLabel(modalData.startDate) : language === "tr" ? "Başlangıç tarihi seç" : "Select start date"}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+
+                        {/* End Date */}
+                        <View style={{ flex: 1, marginLeft: 6 }}>
+                          <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4 }, ]} >
+                            End Date
+                          </Text>
+                          <TouchableOpacity style={[ styles.textInput, { justifyContent: "center", borderColor: theme.border, backgroundColor: theme.bg, ...(config.supportsCurrent && modalData.isCurrent && { opacity: 0.4 }), }, ]} 
+                            disabled={config.supportsCurrent && modalData.isCurrent} onPress={() => !(config.supportsCurrent && modalData.isCurrent) && openDatePicker("endDate") } >
+                            <Text style={{ color: config.supportsCurrent && modalData.isCurrent ? theme.textSecondary : modalData.endDate ? theme.textPrimary : theme.textSecondary, fontSize: 13, }} >
+                              {config.supportsCurrent && modalData.isCurrent ? "Current" : modalData.endDate ? formatDateLabel(modalData.endDate) : language === "tr" ? "Bitiş tarihi seç" : "Select end date"}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                      </>
+                    )}
+
+                    {/* Current toggle for experience */}
+                    {config.supportsCurrent && (
+                      <>
+                      <TouchableOpacity style={[ styles.currentToggle, { borderColor: theme.border, backgroundColor: modalData.isCurrent ? "rgba(34,197,94,0.1)" : "transparent", }, ]}
+                        onPress={toggleCurrent} >
+                        <View style={[ styles.checkbox, { borderColor: theme.border, backgroundColor: modalData.isCurrent ? "#22c55e" : "transparent", }, ]} />
+                        <Text style={[ styles.helperText, { color: theme.textSecondary }, ]} >
+                          Currently ongoing
+                        </Text>
+                      </TouchableOpacity>
+                      </>
+                    )}
+
+                    {/* Details + AI */}
+                    {config.supportsAI && (
+                      <>
+                      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 12, marginBottom: 4, }} >
+                        <Text style={[ styles.fieldLabel, { color: theme.textPrimary }, ]} >
+                          Details / Highlights
+                        </Text>
+                        <TouchableOpacity style={[ styles.aiButton, { borderColor: theme.accent, marginLeft: "auto", }, ]} onPress={() => handleModalAi(config)} disabled={loadingModalAi} >
+                          {loadingModalAi ? (
+                            <ActivityIndicator size="small" />) : (
+                            <Text style={[ styles.aiButtonText, { color: theme.accent }, ]} >
+                              ✨ Improve with AI
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                        </View>
+                          <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, minHeight: 120, }, ]}
+                            multiline textAlignVertical="top" value={modalData.details}
+                            onChangeText={(t) => setModalData((prev) => ({ ...prev, details: t, })) }
+                            placeholder={
+                              isExperience
+                                ? "Describe your responsibilities and achievements.\nUse bullet-style lines. AI will help make them stronger."
+                                : "Add key modules, thesis, honors or notable achievements. AI can polish this."
+                            } placeholderTextColor={theme.textSecondary} />
+                        </>
+                    )}
+                  </ScrollView>
+                </>
+              );
+            })()}
+
+          </View>
         </View>
         {/* {datePickerVisible && ( <DateTimePicker value={datePickerValue} mode="date" display={Platform.OS === "ios" ? "spinner" : "default"} onChange={handleDateChange} /> )} */}
 
@@ -1302,7 +1359,7 @@ const styles = StyleSheet.create({
   charCounter: {
     position: "absolute",
     right: 10,
-    bottom: 4,
+    marginBottom: 5,
     color: "#9ca3af",
     fontSize: 11,
   },
@@ -1330,7 +1387,17 @@ const styles = StyleSheet.create({
   saveText: { fontSize: 13, fontWeight: "600" },
 
   // Preview
-  previewContainer: { flex: 1 },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalCard: {
+    width: "86%",
+    backgroundColor: "#12141c",
+    borderRadius: 16,
+    padding: 16,
+  },
   previewHeader: {
     flexDirection: "row",
     alignItems: "center",
