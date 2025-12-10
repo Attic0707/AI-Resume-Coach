@@ -2,7 +2,7 @@
 import React, { useContext, useMemo, useState, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Modal } from "react-native";
 import { AppContext, saveDocument } from "../context/AppContext";
-import { improveAboutMe, improveSkillsSection, improveProjectsSection, improveExpertiseSection, improvePublishesSection } from "../utils/api";
+import { improveAboutMe, improveSkillsSection, improveProjectsSection, improveExpertiseSection, improvePublishesSection, improveExperienceDetails, improveEducationDetails } from "../utils/api";
 
 const AI_CHAR_LIMIT = 20000;
 
@@ -112,27 +112,37 @@ const BASE_FIELDS = [
 ];
 
 const DEFAULT_MODAL_DATA = {
+  // Experience
   company: "",
   title: "",
+
+  // Education
   institution: "",
   degree: "",
+
+  // Dates
   startDate: "",
   endDate: "",
+  isCurrent: false,
+
+  // Contact
   email: "",
   mobile: "",
   address: "",
   website: "",
   linkedin: "",
 
+  // Certificates
   certName: "",
   issuer: "",
   url: "",
 
+  // Referrals
   refName: "",
-  company: "",
+  refCompany: "",
   contact: "",
-  
-  isCurrent: false,
+
+  // Common free-text details
   details: "",
 };
 
@@ -313,28 +323,37 @@ const MODAL_CONFIGS = {
         .filter(Boolean);
       if (!lines.length) return data;
 
-      const header = lines[0] || "";
-      const [first, second, third] = header.split(",").map((s) => s.trim());
-      // naive mapping
-      data.email = first || "";
-      data.mobile = second || "";
-      data.address = third || "";
+      lines.forEach((line) => {
+        const lower = line.toLowerCase();
+
+        if (lower.startsWith("email:")) {
+          data.email = line.split(":").slice(1).join(":").trim();
+        } else if (lower.startsWith("phone:") || lower.startsWith("mobile:")) {
+          data.mobile = line.split(":").slice(1).join(":").trim();
+        } else if (lower.startsWith("address:")) {
+          data.address = line.split(":").slice(1).join(":").trim();
+        } else if (lower.startsWith("website:")) {
+          data.website = line.split(":").slice(1).join(":").trim();
+        } else if (lower.startsWith("linkedin:")) {
+          data.linkedin = line.split(":").slice(1).join(":").trim();
+        }
+      });
 
       return data;
     },
+
     format: (data, previousValue, mode) => {
-      const { email, mobile, address } = data;
+      const { email, mobile, address, website, linkedin } = data;
 
-      const headerLine = [email, mobile, address].filter(Boolean).join(", ");
       const lines = [];
-
-      if (headerLine) lines.push(headerLine);
+      if (email) lines.push(`Email: ${email}`);
+      if (mobile) lines.push(`Phone: ${mobile}`);
+      if (address) lines.push(`Address: ${address}`);
+      if (website) lines.push(`Website: ${website}`);
+      if (linkedin) lines.push(`LinkedIn: ${linkedin}`);
 
       const block = lines.join("\n");
-
-      if (mode === "edit" || !previousValue?.trim()) return block;
-
-      return `${previousValue.trim()}\n\n${block}`;
+      return block;
     },
   },
 
@@ -396,7 +415,7 @@ const MODAL_CONFIGS = {
     primary1Key: "refName",
     primary1Placeholder: "",
     primary2Label: "Company",
-    primary2Key: "company",
+    primary2Key: "refCompany",
     primary2Placeholder: "",
     primary3Label: "Contact Info",
     primary3Key: "contact",
@@ -416,18 +435,20 @@ const MODAL_CONFIGS = {
       if (!lines.length) return data;
 
       const header = lines[0] || "";
-      const [first, second, third ] = header.split(",").map((s) => s.trim());
-      // naive mapping
+      const [first, second, third] = header.split(",").map((s) => s.trim());
+
       data.refName = first || "";
-      data.company = second || "";
+      data.refCompany = second || "";
       data.contact = third || "";
 
       return data;
     },
     format: (data, previousValue, mode) => {
-      const { refName, company, contact } = data;
+      const { refName, refCompany, contact } = data;
 
-      const headerLine = [refName, company, contact].filter(Boolean).join(", ");
+      const headerLine = [refName, refCompany, contact]
+        .filter(Boolean)
+        .join(", ");
       const lines = [];
 
       if (headerLine) lines.push(headerLine);
@@ -438,7 +459,7 @@ const MODAL_CONFIGS = {
 
       return `${previousValue.trim()}\n\n${block}`;
     },
-  }
+  },
 };
 
 const stripCurrentFromExperience = (text = "") => {
@@ -463,6 +484,8 @@ const AI_API_BY_FIELD = {
   projects: improveProjectsSection,
   expertise: improveExpertiseSection,
   publishes: improvePublishesSection,
+  experience_details: improveExperienceDetails,
+  education_details: improveEducationDetails,
 };
 
 export default function ResumeEditorScreen({ route, navigation }) {
@@ -748,8 +771,7 @@ export default function ResumeEditorScreen({ route, navigation }) {
       return;
     }
 
-    const prevValue =
-      fields.find((f) => f.key === activeModalField)?.value || "";
+    const prevValue = fields.find((f) => f.key === activeModalField)?.value || "";
     const formatted = config.format(modalData, prevValue, modalMode);
 
     updateFieldValue(activeModalField, formatted);
