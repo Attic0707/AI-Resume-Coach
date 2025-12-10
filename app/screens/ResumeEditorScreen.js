@@ -1,11 +1,12 @@
 // app/screens/ResumeEditorScreen.js
 import React, { useContext, useMemo, useState, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Modal, Platform } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, TouchableWithoutFeedback, Alert, Modal, Platform, Dimensions } from "react-native";
 import { AppContext, saveDocument } from "../context/AppContext";
 import { improveAboutMe, improveSkillsSection, improveProjectsSection, improveExpertiseSection, improvePublishesSection, improveExperienceDetails, improveEducationDetails } from "../utils/api";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 const AI_CHAR_LIMIT = 20000;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 // Default order / base metadata for fields we care about
 const BASE_FIELDS = [
@@ -1047,8 +1048,14 @@ export default function ResumeEditorScreen({ route, navigation }) {
       </View>
 
       {/* Parametric modal (experience, education, etc.) */}
-      <Modal visible={!!activeModalField} animationType="fade" onRequestClose={closeModal}>
-        <View style={[ styles.modalBackdrop, ]} >
+      <Modal visible={!!activeModalField} transparent animationType="fade" onRequestClose={closeModal}>
+        <View style={[ styles.storyModalOverlay, ]} >
+          {/* Invisible full-screen click area for background tap */}
+          <TouchableWithoutFeedback onPress={closeModal}>
+            <View style={StyleSheet.absoluteFill} />
+          </TouchableWithoutFeedback>
+
+          {/* Actual popup card – NOT inside the background touchable */}
           <View style={styles.modalCard}>
             {(() => {
               const config = activeModalField ? MODAL_CONFIGS[activeModalField] : null;
@@ -1518,5 +1525,90 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     marginBottom: 4,
+  },
+
+  // Story modal
+  storyModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.63)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  storyModalCategory: {
+    fontSize: 13,
+    color: "#ffdd88",
+    marginBottom: 4,
+  },
+  storyModalTitle: {
+    fontSize: 20,
+    color: "#ffffff",
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  storyModalCardBackground: {
+    width: SCREEN_WIDTH * 0.9,
+    height: SCREEN_HEIGHT * 0.55,
+    borderRadius: 20,
+    overflow: "hidden", // must-have!
+  },
+  storyModalCardImage: {
+    borderRadius: 20,
+  },
+  storyModalCardInner: {
+    flex: 1,
+    padding: 25,
+    backgroundColor: "rgba(10, 10, 15, 0.34)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  storyModalText: {
+    fontSize: 15,
+    color: "#e5e5f0",
+    lineHeight: 22,
+  },
+  storyModalTopContent: {
+    flex: 1,
+  },
+  storyModalButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(255,255,255,0.25)",
+  },
+  storyModalButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center",
+  },
+  storyModalButtonText: {
+    fontSize: 14,
+    color: "#ffffff",
+  },
+  storyModalFooterNav: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  storyLeftZone: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: "25%",          // first quarter of the modal
+    zIndex: 20,
+  },
+  storyRightZone: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: "25%",          // last quarter of the modal
+    zIndex: 20,
   },
 });
