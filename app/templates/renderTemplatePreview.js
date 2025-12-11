@@ -529,6 +529,177 @@ export function renderTemplatePreview({ templateId, data, photoUri }) {
       );
     }
 
+    /**
+     * 3) STANFORD BUSINESS RESUME
+     * - Education first
+     * - Strong BUSINESS SKILLS block
+     * - Projects + Experience
+     * - Activities / Awards last
+     */
+    case "stanfordBusiness": {
+        const mainName = name || "YOUR NAME";
+        const mainHeadline =
+            headline || "Business / Management / Consulting Candidate";
+
+        const contactLines = contact
+            ? contact
+                .split("\n")
+                .map((l) => l.trim())
+                .filter(Boolean)
+            : [];
+
+        const hasEducation = !!education?.trim();
+        const hasExperience = !!experience?.trim();
+        const hasLeadership =
+            !!projects?.trim() || !!publishes?.trim() || !!referrals?.trim();
+        const hasSkillsInterests =
+            !!skills?.trim() || !!languages?.trim() || !!expertise?.trim();
+
+        // Small Section helper (if you don't already have it above the switch)
+        const Section = ({ title, children }) => {
+            if (!children) return null;
+            return (
+            <View style={styles.stSection}>
+                <Text style={styles.stSectionTitle}>{title}</Text>
+                {children}
+            </View>
+            );
+        };
+
+        // Render multi-line text blocks like Education / Experience
+        const renderMultilineBlock = (text) => {
+            if (!text?.trim()) return null;
+            const lines = text
+            .split("\n")
+            .map((l) => l.trim())
+            .filter(Boolean);
+
+            return (
+            <View style={styles.stIndentedBlock}>
+                {lines.map((line, idx) => (
+                <Text key={idx} style={styles.stBodyText}>
+                    {line}
+                </Text>
+                ))}
+            </View>
+            );
+        };
+
+        // Leadership & Activities – mix projects + publishes + referrals
+        const renderLeadershipBlock = () => {
+            if (!hasLeadership) return null;
+
+            const blocks = [];
+
+            if (projects?.trim()) {
+            blocks.push(projects.trim());
+            }
+            if (publishes?.trim()) {
+            blocks.push(publishes.trim());
+            }
+            if (referrals?.trim()) {
+            blocks.push(referrals.trim());
+            }
+
+            return (
+            <View style={styles.stIndentedBlock}>
+                {blocks.map((block, idx) => (
+                <Text key={idx} style={styles.stBodyText}>
+                    {block}
+                </Text>
+                ))}
+            </View>
+            );
+        };
+
+        // Skills & Interests – compress skills + languages + expertise
+        const renderSkillsInterestsBlock = () => {
+            if (!hasSkillsInterests) return null;
+
+            const lines = [];
+
+            if (skills?.trim()) {
+            lines.push(`Skills: ${skills.trim()}`);
+            }
+            if (languages?.trim()) {
+            lines.push(`Languages: ${languages.trim()}`);
+            }
+            if (expertise?.trim()) {
+            // Let the user decide what they put here (interests, functional strengths etc.)
+            lines.push(`Interests / Strengths: ${expertise.trim()}`);
+            }
+
+            return (
+            <View style={styles.stIndentedBlock}>
+                {lines.map((line, idx) => (
+                <Text key={idx} style={styles.stBodyText}>
+                    {line}
+                </Text>
+                ))}
+            </View>
+            );
+        };
+
+        return (
+            <View style={styles.stPageOuter}>
+            <View style={styles.stPageInner}>
+                {/* HEADER */}
+                <View style={styles.stHeaderRow}>
+                <View style={styles.stHeaderLeft}>
+                    <Text style={styles.stName}>{mainName}</Text>
+                    <Text style={styles.stHeadline}>{mainHeadline}</Text>
+                </View>
+
+                <View style={styles.stHeaderRight}>
+                    {contactLines.map((line, idx) => (
+                    <Text key={idx} style={styles.stContactText}>
+                        {line}
+                    </Text>
+                    ))}
+                </View>
+                </View>
+
+                {/* One-line professional summary, optional */}
+                {summary?.trim() ? (
+                <View style={styles.stSummaryRow}>
+                    <Text style={styles.stSummaryText}>{summary.trim()}</Text>
+                </View>
+                ) : null}
+
+                <View style={styles.stDivider} />
+
+                {/* EDUCATION FIRST */}
+                {hasEducation && (
+                <Section title="EDUCATION">
+                    {renderMultilineBlock(education)}
+                </Section>
+                )}
+
+                {/* PROFESSIONAL EXPERIENCE */}
+                {hasExperience && (
+                <Section title="PROFESSIONAL EXPERIENCE">
+                    {renderMultilineBlock(experience)}
+                </Section>
+                )}
+
+                {/* LEADERSHIP & ACTIVITIES (clubs, projects, awards, referrals) */}
+                {hasLeadership && (
+                <Section title="LEADERSHIP & ACTIVITIES">
+                    {renderLeadershipBlock()}
+                </Section>
+                )}
+
+                {/* SKILLS & INTERESTS */}
+                {hasSkillsInterests && (
+                <Section title="SKILLS & INTERESTS">
+                    {renderSkillsInterestsBlock()}
+                </Section>
+                )}
+            </View>
+            </View>
+        );
+    }
+
     // Other templates – still stubs for now
     case "classic":
       return (

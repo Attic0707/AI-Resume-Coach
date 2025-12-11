@@ -40,6 +40,12 @@ const TEMPLATES = [
     tag: "Technical",
     description: "Education-first layout with strong technical skills and projects emphasis.",
   },
+  {
+    id: "stanfordBusiness",
+    name: "Business",
+    tag: "Business",
+    description: "Education-first layout with strong Business skills and projects emphasis.",
+  },
 ];
 
 // --- Minimal White A4-like page preview (inspired by your Canva link) ---
