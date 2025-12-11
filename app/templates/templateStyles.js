@@ -195,3 +195,192 @@ export const minimalWhiteStyles = StyleSheet.create({
     marginTop: 2,
   },
 });
+
+/**
+ * Stanford Chronological style
+ */
+export const stanfordChronologicalStyles = StyleSheet.create({
+  scPageOuter: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(148,163,184,0.4)",
+    padding: 8,
+    marginTop: 8,
+    alignItems: "center",
+  },
+
+  scPageInner: {
+    width: "100%",
+    aspectRatio: 0.707,
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 26,
+  },
+
+  // HEADER
+  scHeader: {
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  scName: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  scContactLine: {
+    marginTop: 4,
+    fontSize: 11,
+    color: "#4b5563",
+    textAlign: "center",
+  },
+
+  scDivider: {
+    height: 1,
+    backgroundColor: "#e5e7eb",
+    marginVertical: 16,
+  },
+
+  // SECTION
+  scSectionBlock: {
+    marginBottom: 20,
+  },
+  scSectionTitle: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+    color: "#6b7280",
+    marginBottom: 6,
+  },
+
+  // SUB-HEADER (company / school)
+  scSubHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  scSubHeaderMain: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#111827",
+    flex: 1,
+    paddingRight: 12,
+  },
+  scDateText: {
+    fontSize: 11,
+    color: "#6b7280",
+  },
+
+  // BULLETS
+  scBulletRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 4,
+  },
+  scBullet: {
+    fontSize: 10,
+    marginRight: 6,
+    marginTop: 3,
+    color: "#111827",
+  },
+  scBulletText: {
+    fontSize: 11,
+    color: "#111827",
+    lineHeight: 16,
+    flex: 1,
+  },
+
+  // BODY TEXT
+  scBodyText: {
+    fontSize: 11,
+    color: "#111827",
+    lineHeight: 16,
+  },
+});
+
+export const stanfordTechnicalStyles = StyleSheet.create({
+stPageOuter: {
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: "rgba(148,163,184,0.5)",
+      padding: 10,
+      backgroundColor: "#020617",
+  },
+  stPageInner: {
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+  },
+  stHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 8,
+  },
+  stHeaderLeft: {
+    flex: 1.2,
+    paddingRight: 12,
+  },
+  stHeaderRight: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
+  stName: {
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    color: "#111827",
+    textTransform: "uppercase",
+    marginBottom: 2,
+  },
+  stHeadline: {
+    fontSize: 12,
+    color: "#4b5563",
+    fontWeight: "500",
+  },
+  stContactText: {
+    fontSize: 10,
+    color: "#4b5563",
+  },
+  stSummaryRow: {
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  stSummaryText: {
+    fontSize: 11,
+    color: "#374151",
+  },
+  stDivider: {
+    height: 1,
+    backgroundColor: "#e5e7eb",
+    marginVertical: 6,
+  },
+
+  // Sections
+  stSection: {
+    marginTop: 6,
+  },
+  stSectionTitle: {
+    fontSize: 11,
+    color: "#111827",
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 2,
+  },
+  stIndentedBlock: {
+    marginLeft: 4,
+    marginTop: 1,
+  },
+  stBodyText: {
+    fontSize: 10,
+    color: "#111827",
+    lineHeight: 14,
+  },
+  stBodyBold: {
+    fontWeight: "700",
+    fontSize: 10,
+    color: "#111827",
+  },
+});

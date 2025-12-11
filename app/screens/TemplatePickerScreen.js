@@ -28,6 +28,18 @@ const TEMPLATES = [
     tag: "Stand-out",
     description: "More visual emphasis for creative and design roles.",
   },
+  {
+    id: "stanfordChronological",
+    name: "Chronological",
+    tag: "Chronological",
+    description: "Focus on correct chronological event structure.",
+  },
+  {
+    id: "stanfordTechnical",
+    name: "Technical",
+    tag: "Technical",
+    description: "Education-first layout with strong technical skills and projects emphasis.",
+  },
 ];
 
 // --- Minimal White A4-like page preview (inspired by your Canva link) ---

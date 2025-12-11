@@ -1,12 +1,14 @@
 // app/templates/renderTemplatePreview.js
 import React from "react";
 import { View, Text, Image } from "react-native";
-import { previewBaseStyles, minimalWhiteStyles } from "./templateStyles";
+import { previewBaseStyles, minimalWhiteStyles, stanfordChronologicalStyles, stanfordTechnicalStyles } from "./templateStyles";
 
 // Merge all style groups into a single object
 const styles = {
   ...previewBaseStyles,
   ...minimalWhiteStyles,
+  ...stanfordChronologicalStyles,
+  ...stanfordTechnicalStyles,
 };
 
 /**
@@ -46,6 +48,13 @@ export function renderTemplatePreview({ templateId, data, photoUri }) {
       </View>
     );
   };
+
+  const contactLines = contact
+    ? contact
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean)
+    : [];
 
   const toChips = (text = "") =>
     text
@@ -253,6 +262,268 @@ export function renderTemplatePreview({ templateId, data, photoUri }) {
                 ) : null}
               </View>
             </View>
+          </View>
+        </View>
+      );
+    }
+
+    /**
+     * 1) CHRONOLOGICAL
+     */
+    case "stanfordChronological": {
+        const formatBullets = (text = "") =>
+            text
+            .split(/\n+/g)
+            .map((l) => l.trim())
+            .filter(Boolean)
+            .map((line, idx) => (
+                <View key={idx} style={styles.scBulletRow}>
+                <Text style={styles.scBullet}>•</Text>
+                <Text style={styles.scBulletText}>{line}</Text>
+                </View>
+            ));
+
+        return (
+            <View style={styles.scPageOuter}>
+            <View style={styles.scPageInner}>
+
+                {/* HEADER */}
+                <View style={styles.scHeader}>
+                <Text style={styles.scName}>{mainName || "YOUR NAME"}</Text>
+
+                {contact?.trim() ? (
+                    <Text style={styles.scContactLine}>
+                    {contact
+                        .split("\n")
+                        .map((l) => l.trim())
+                        .filter(Boolean)
+                        .join("  •  ")}
+                    </Text>
+                ) : (
+                    <Text style={styles.scContactLine}>
+                    email@example.com  •  (555) 555-5555  •  linkedin.com/in/you
+                    </Text>
+                )}
+                </View>
+
+                {/* Divider */}
+                <View style={styles.scDivider} />
+
+                {/* EDUCATION */}
+                {education?.trim() ? (
+                <View style={styles.scSectionBlock}>
+                    <Text style={styles.scSectionTitle}>EDUCATION</Text>
+
+                    <View style={styles.scSubHeaderRow}>
+                    <Text style={styles.scSubHeaderMain}>
+                        University / School Name — Degree
+                    </Text>
+                    <Text style={styles.scDateText}>2020 – 2024</Text>
+                    </View>
+
+                    {formatBullets(education)}
+                </View>
+                ) : null}
+
+                {/* EXPERIENCE */}
+                {experience?.trim() ? (
+                <View style={styles.scSectionBlock}>
+                    <Text style={styles.scSectionTitle}>EXPERIENCE</Text>
+
+                    <View style={styles.scSubHeaderRow}>
+                    <Text style={styles.scSubHeaderMain}>
+                        Company Name — Job Title
+                    </Text>
+                    <Text style={styles.scDateText}>2018 – 2020</Text>
+                    </View>
+
+                    {formatBullets(experience)}
+                </View>
+                ) : null}
+
+                {/* PROJECTS (optional) */}
+                {projects?.trim() ? (
+                <View style={styles.scSectionBlock}>
+                    <Text style={styles.scSectionTitle}>PROJECTS</Text>
+                    {formatBullets(projects)}
+                </View>
+                ) : null}
+
+                {/* SKILLS */}
+                {skills?.trim() ? (
+                <View style={styles.scSectionBlock}>
+                    <Text style={styles.scSectionTitle}>SKILLS</Text>
+                    <Text style={styles.scBodyText}>{skills.trim()}</Text>
+                </View>
+                ) : null}
+            </View>
+            </View>
+        );
+    }
+
+    /**
+     * 2) STANFORD TECHNICAL RESUME
+     * - Education first
+     * - Strong TECHNICAL SKILLS block
+     * - Projects + Experience
+     * - Activities / Awards last
+     */
+    case "stanfordTechnical": {
+      // Prefer "expertise" for TECHNICAL SKILLS. Fallback to skills.
+      const technicalBlock = (expertise && expertise.trim()) || skills || "";
+      const hasTechnicalBlock = !!technicalBlock.trim();
+      const hasProjects = !!projects?.trim();
+      const hasExperience = !!experience?.trim();
+      const hasEducation = !!education?.trim();
+      const hasActivities =
+        !!publishes?.trim() || !!certificates?.trim() || !!referrals?.trim();
+
+      // Turn technical text into bullet-style lines
+      const renderTechnicalLines = () => {
+        if (!hasTechnicalBlock) return null;
+
+        const lines = technicalBlock
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean);
+
+        // If the user used colon-separated categories, keep them as title + line.
+        // e.g. "Languages: Java, Python, C++"
+        return (
+          <View style={styles.stIndentedBlock}>
+            {lines.map((line, idx) => {
+              if (line.includes(":")) {
+                const [labelPart, rest] = line.split(":");
+                return (
+                  <Text key={idx} style={styles.stBodyText}>
+                    <Text style={styles.stBodyBold}>
+                      {labelPart.trim()}
+                      {": "}
+                    </Text>
+                    {rest ? rest.trim() : ""}
+                  </Text>
+                );
+              }
+              return (
+                <Text key={idx} style={styles.stBodyText}>
+                  • {line}
+                </Text>
+              );
+            })}
+          </View>
+        );
+      };
+
+      // Simple helper to render blocks of text (experience, projects, etc.)
+      const renderMultilineBlock = (text) => {
+        if (!text?.trim()) return null;
+        return (
+          <View style={styles.stIndentedBlock}>
+            {text
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean)
+              .map((line, idx) => (
+                <Text key={idx} style={styles.stBodyText}>
+                  {line}
+                </Text>
+              ))}
+          </View>
+        );
+      };
+
+      // Activities / Awards at the bottom
+      const renderActivitiesBlock = () => {
+        if (!hasActivities) return null;
+
+        return (
+          <View style={styles.stIndentedBlock}>
+            {publishes?.trim() && (
+              <Text style={styles.stBodyText}>{publishes.trim()}</Text>
+            )}
+            {certificates?.trim() && (
+              <Text style={styles.stBodyText}>{certificates.trim()}</Text>
+            )}
+            {referrals?.trim() && (
+              <Text style={styles.stBodyText}>{referrals.trim()}</Text>
+            )}
+          </View>
+        );
+      };
+
+      return (
+        <View style={styles.stPageOuter}>
+          <View style={styles.stPageInner}>
+            {/* HEADER */}
+            <View style={styles.stHeaderRow}>
+              <View style={styles.stHeaderLeft}>
+                <Text style={styles.stName}>{mainName}</Text>
+                <Text style={styles.stHeadline}>
+                  {mainHeadline || "Technical Resume"}
+                </Text>
+              </View>
+
+              <View style={styles.stHeaderRight}>
+                {contactLines.map((line, idx) => (
+                  <Text key={idx} style={styles.stContactText}>
+                    {line}
+                  </Text>
+                ))}
+              </View>
+            </View>
+
+            {/* Optional one-line summary just under header */}
+            {summary?.trim() ? (
+              <View style={styles.stSummaryRow}>
+                <Text style={styles.stSummaryText}>{summary.trim()}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.stDivider} />
+
+            {/* EDUCATION FIRST */}
+            {hasEducation && (
+              <Section title="EDUCATION">
+                {renderMultilineBlock(education)}
+              </Section>
+            )}
+
+            {/* TECHNICAL SKILLS */}
+            {hasTechnicalBlock && (
+              <Section title="TECHNICAL SKILLS">
+                {renderTechnicalLines()}
+              </Section>
+            )}
+
+            {/* PROJECTS (often very important for tech) */}
+            {hasProjects && (
+              <Section title="PROJECTS">
+                {renderMultilineBlock(projects)}
+              </Section>
+            )}
+
+            {/* RELEVANT EXPERIENCE */}
+            {hasExperience && (
+              <Section title="EXPERIENCE">
+                {renderMultilineBlock(experience)}
+              </Section>
+            )}
+
+            {/* ACTIVITIES / AWARDS / EXTRAS */}
+            {hasActivities && (
+              <Section title="ACTIVITIES & AWARDS">
+                {renderActivitiesBlock()}
+              </Section>
+            )}
+
+            {/* Optional Languages at bottom */}
+            {languages?.trim() && (
+              <Section title="LANGUAGES">
+                <View style={styles.stIndentedBlock}>
+                  <Text style={styles.stBodyText}>{languages.trim()}</Text>
+                </View>
+              </Section>
+            )}
           </View>
         </View>
       );
