@@ -1,8 +1,11 @@
 // app/screens/TemplateEditorScreen.js
-import React, { useContext, useMemo, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Modal, } from "react-native";
+import React, { useContext, useMemo, useState, useRef } from "react";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Modal, Image } from "react-native";
 import { AppContext, saveDocument } from "../context/AppContext";
 import { improveAboutMe, improveSkillsSection, improveProjectsSection, improveExpertiseSection, improvePublishesSection, improveExperienceDetails, improveEducationDetails } from "../utils/api";
+import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
+import { renderTemplatePreview } from "../templates/renderTemplatePreview";
 
 const BASE_FIELDS = [
   {
@@ -488,6 +491,83 @@ export default function TemplateEditorScreen({ route, navigation }) {
   const [modalData, setModalData] = useState(DEFAULT_MODAL_DATA);
   const [loadingModalAi, setLoadingModalAi] = useState(false);
 
+  // Photo state
+  const [photoUri, setPhotoUri] = useState(null);
+  const lastPhotoPickRef = useRef(0);
+  const MAX_PHOTO_WIDTH = 600; // px
+  const MAX_PICK_PER_20S = 5; // basic client-side rate limit
+
+  const handlePickPhoto = async () => {
+    const now = Date.now();
+    if (now - lastPhotoPickRef.current < 20_000) {
+      // in last 20s – just a soft limit; real protection should be server-side
+      lastPhotoPickRef.current = now;
+    }
+
+    try {
+      // 1) Ask permission
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission needed",
+          "We need access to your photo library to add your profile picture."
+        );
+        return;
+      }
+
+      // 2) Pick ONLY images
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 5], // portrait-ish
+        quality: 1,
+        base64: false,
+        exif: false,
+      });
+
+      if (result.canceled) return;
+
+      const asset = result.assets?.[0];
+      if (!asset) return;
+
+      // (Optional) basic mime hint – some platforms provide "type"
+      if (asset.type && asset.type !== "image") {
+        Alert.alert(
+          "Unsupported file",
+          "Please choose an image file (JPEG or PNG)."
+        );
+        return;
+      }
+
+      // 3) Resize + re-encode to JPEG for safety & consistency
+      const manipulated = await ImageManipulator.manipulateAsync(
+        asset.uri,
+        [{ resize: { width: MAX_PHOTO_WIDTH } }],
+        {
+          compress: 0.7, // ~good size/quality balance
+          format: ImageManipulator.SaveFormat.JPEG,
+        }
+      );
+
+      // 👉 At this point:
+      // - We have a max 600px-wide JPEG
+      // - No EXIF, no other formats
+      // Final size check should still be done server-side when uploading.
+
+      setPhotoUri(manipulated.uri);
+    } catch (err) {
+      console.log("Photo pick error:", err);
+      Alert.alert(
+        "Photo error",
+        "We couldn't process that image. Please try another photo."
+      );
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoUri(null);
+  };
 
   const checkPaywall = () => {
     if (isPro) return true;
@@ -729,310 +809,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
   };
 
   const renderPreviewContent = () => {
-    const {
-      name,
-      headline,
-      summary,
-      contact,
-      experience,
-      education,
-      skills,
-      projects,
-      languages,
-      expertise,
-      certificates,
-      publishes,
-      referrals,
-    } = previewData;
-
-    const mainName = name || "Your Name";
-    const mainHeadline = headline || "Target Role / Headline";
-
-    const Section = ({ title, text, compact }) => {
-      if (!text?.trim()) return null;
-      return (
-        <View style={compact ? styles.pvSectionCompact : styles.pvSection}>
-          <Text style={styles.pvSectionTitle}>{title}</Text>
-          <Text style={styles.pvSectionBody}>{text.trim()}</Text>
-        </View>
-      );
-    };
-
-    // turn comma / newline skills into chips
-    const toChips = (text = "") =>
-      text
-        .split(/[,;•\n]+/g)
-        .map((t) => t.trim())
-        .filter(Boolean)
-        .slice(0, 16); // don’t explode the preview
-
-    const renderSkillChips = (text) => {
-      const chips = toChips(text);
-      if (!chips.length) return null;
-      return (
-        <View style={styles.pvChipWrap}>
-          {chips.map((c, idx) => (
-            <View key={idx} style={styles.pvChip}>
-              <Text style={styles.pvChipText}>{c}</Text>
-            </View>
-          ))}
-        </View>
-      );
-    };
-
-    const renderContact = () => {
-      if (!contact?.trim()) return null;
-      return (
-        <View style={styles.pvContactBlock}>
-          {contact.split("\n").map((line, idx) => (
-            <Text key={idx} style={styles.pvContactText}>
-              {line.trim()}
-            </Text>
-          ))}
-        </View>
-      );
-    };
-
-    switch (templateId) {
-      /**
-       * 1) CLASSIC
-       * - Single column
-       * - Clean header, simple separators
-       */
-      case "classic":
-        return (
-          <View style={styles.pvPage}>
-            <View style={styles.pvHeaderClassic}>
-              <Text style={styles.pvName}>{mainName}</Text>
-              <Text style={styles.pvHeadline}>{mainHeadline}</Text>
-              {renderContact()}
-            </View>
-
-            <Section title="PROFILE" text={summary} />
-            <Section title="EXPERIENCE" text={experience} />
-            <Section title="EDUCATION" text={education} />
-
-            {skills?.trim() ? (
-              <View style={styles.pvSection}>
-                <Text style={styles.pvSectionTitle}>SKILLS</Text>
-                {renderSkillChips(skills)}
-              </View>
-            ) : null}
-
-            <Section title="PROJECTS" text={projects} />
-            <Section title="LANGUAGES" text={languages} />
-            <Section title="AREAS OF EXPERTISE" text={expertise} />
-            <Section title="CERTIFICATES" text={certificates} />
-            <Section title="PUBLICATIONS & AWARDS" text={publishes} />
-            <Section title="REFERRALS" text={referrals} />
-          </View>
-        );
-
-      /**
-       * 2) TRADITIONAL
-       * - Strong header, separators between blocks
-       */
-      case "traditional":
-        return (
-          <View style={styles.pvPage}>
-            <View style={styles.pvHeaderTraditional}>
-              <Text style={styles.pvName}>{mainName}</Text>
-              <Text style={styles.pvHeadline}>{mainHeadline}</Text>
-              {renderContact()}
-            </View>
-
-            <View style={styles.pvSeparator} />
-            <Section title="SUMMARY" text={summary} />
-            <View style={styles.pvSeparatorThin} />
-            <Section title="PROFESSIONAL EXPERIENCE" text={experience} />
-            <View style={styles.pvSeparatorThin} />
-            <Section title="EDUCATION" text={education} />
-            <View style={styles.pvSeparatorThin} />
-
-            {skills?.trim() ? (
-              <>
-                <Text style={styles.pvSectionTitle}>SKILLS</Text>
-                {renderSkillChips(skills)}
-                <View style={styles.pvSeparatorThin} />
-              </>
-            ) : null}
-
-            <Section title="PROJECTS" text={projects} />
-            <Section title="LANGUAGES" text={languages} />
-            <Section title="AREAS OF EXPERTISE" text={expertise} />
-            <Section title="CERTIFICATES" text={certificates} />
-            <Section title="PUBLICATIONS & AWARDS" text={publishes} />
-          </View>
-        );
-
-      /**
-       * 3) PROFESSIONAL
-       * - Header band
-       * - Main column + sidebar with skills / languages / expertise
-       */
-      case "professional":
-        return (
-          <View style={styles.pvPage}>
-            <View style={styles.pvHeaderBand}>
-              <Text style={styles.pvNameBand}>{mainName}</Text>
-              <Text style={styles.pvHeadlineBand}>{mainHeadline}</Text>
-              {renderContact()}
-            </View>
-
-            <View style={styles.pvTwoCol}>
-              {/* Main column */}
-              <View style={styles.pvMainCol}>
-                <Section title="SUMMARY" text={summary} />
-                <Section title="EXPERIENCE" text={experience} />
-                <Section title="PROJECTS" text={projects} />
-                <Section title="EDUCATION" text={education} />
-              </View>
-
-              {/* Sidebar */}
-              <View style={styles.pvSideCol}>
-                {skills?.trim() ? (
-                  <View style={styles.pvSideCard}>
-                    <Text style={styles.pvSectionTitle}>KEY SKILLS</Text>
-                    {renderSkillChips(skills)}
-                  </View>
-                ) : null}
-
-                {languages?.trim() ? (
-                  <View style={styles.pvSideCard}>
-                    <Text style={styles.pvSectionTitle}>LANGUAGES</Text>
-                    <Text style={styles.pvSectionBody}>{languages}</Text>
-                  </View>
-                ) : null}
-
-                {expertise?.trim() ? (
-                  <View style={styles.pvSideCard}>
-                    <Text style={styles.pvSectionTitle}>EXPERTISE</Text>
-                    <Text style={styles.pvSectionBody}>{expertise}</Text>
-                  </View>
-                ) : null}
-
-                {certificates?.trim() ? (
-                  <View style={styles.pvSideCard}>
-                    <Text style={styles.pvSectionTitle}>CERTIFICATES</Text>
-                    <Text style={styles.pvSectionBody}>{certificates}</Text>
-                  </View>
-                ) : null}
-              </View>
-            </View>
-          </View>
-        );
-
-      /**
-       * 4) CLEAR
-       * - Modern header stripe
-       * - Two-column with boxed right side
-       */
-      case "clear":
-        return (
-          <View style={styles.pvPage}>
-            <View style={styles.pvHeaderClear}>
-              <View style={styles.pvHeaderClearStripe} />
-              <View>
-                <Text style={styles.pvName}>{mainName}</Text>
-                <Text style={styles.pvHeadline}>{mainHeadline}</Text>
-                {renderContact()}
-              </View>
-            </View>
-
-            <View style={styles.pvTwoCol}>
-              {/* Main column */}
-              <View style={styles.pvMainCol}>
-                <Section title="SUMMARY" text={summary} />
-                <Section title="EXPERIENCE" text={experience} />
-                <Section title="PROJECTS" text={projects} />
-                <Section title="EDUCATION" text={education} />
-              </View>
-
-              {/* Boxed side column */}
-              <View style={styles.pvSideColBoxed}>
-                {skills?.trim() ? (
-                  <View style={styles.pvSideCardBoxed}>
-                    <Text style={styles.pvSectionTitle}>SKILLS</Text>
-                    {renderSkillChips(skills)}
-                  </View>
-                ) : null}
-
-                {languages?.trim() ? (
-                  <View style={styles.pvSideCardBoxed}>
-                    <Text style={styles.pvSectionTitle}>LANGUAGES</Text>
-                    <Text style={styles.pvSectionBody}>{languages}</Text>
-                  </View>
-                ) : null}
-
-                {expertise?.trim() ? (
-                  <View style={styles.pvSideCardBoxed}>
-                    <Text style={styles.pvSectionTitle}>EXPERTISE</Text>
-                    <Text style={styles.pvSectionBody}>{expertise}</Text>
-                  </View>
-                ) : null}
-
-                {publishes?.trim() ? (
-                  <View style={styles.pvSideCardBoxed}>
-                    <Text style={styles.pvSectionTitle}>PUBLICATIONS</Text>
-                    <Text style={styles.pvSectionBody}>{publishes}</Text>
-                  </View>
-                ) : null}
-              </View>
-            </View>
-          </View>
-        );
-
-      /**
-       * 5) CREATIVE
-       * - Color left bar, looser sections, “featured” feel
-       */
-      case "creative":
-        return (
-          <View style={styles.pvPageCreative}>
-            <View style={styles.pvCreativeLeftBar} />
-            <View style={styles.pvCreativeContent}>
-              <View style={styles.pvHeaderCreative}>
-                <Text style={styles.pvName}>{mainName}</Text>
-                <Text style={styles.pvHeadlineCreative}>{mainHeadline}</Text>
-                {renderContact()}
-              </View>
-
-              <Section title="ABOUT" text={summary} />
-              <Section title="HIGHLIGHT EXPERIENCE" text={experience} />
-              <Section title="FEATURED PROJECTS" text={projects} />
-
-              {skills?.trim() ? (
-                <View style={styles.pvSection}>
-                  <Text style={styles.pvSectionTitle}>SKILLS & TOOLS</Text>
-                  {renderSkillChips(skills)}
-                </View>
-              ) : null}
-
-              <Section title="EDUCATION" text={education} />
-              <Section title="EXPERTISE" text={expertise} />
-              <Section title="LANGUAGES" text={languages} />
-              <Section title="AWARDS & PUBLICATIONS" text={publishes} />
-            </View>
-          </View>
-        );
-
-      // Default fallback: classic
-      default:
-        return (
-          <View style={styles.pvPage}>
-            <View style={styles.pvHeaderClassic}>
-              <Text style={styles.pvName}>{mainName}</Text>
-              <Text style={styles.pvHeadline}>{mainHeadline}</Text>
-              {renderContact()}
-            </View>
-            <Section title="SUMMARY" text={summary} />
-            <Section title="EXPERIENCE" text={experience} />
-            <Section title="EDUCATION" text={education} />
-            <Section title="SKILLS" text={skills} />
-            <Section title="PROJECTS" text={projects} />
-          </View>
-        );
-    }
+    return renderTemplatePreview({ templateId, data: previewData, styles, photoUri });
   };
 
   return (
@@ -1063,6 +840,35 @@ export default function TemplateEditorScreen({ route, navigation }) {
               EN
             </Text>
           </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* 🆕 Photo uploader row */}
+      <View style={[ styles.photoRow, { borderColor: theme.border, backgroundColor: theme.bgCard }, ]} >
+        <TouchableOpacity onPress={handlePickPhoto} activeOpacity={0.8}>
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={styles.photoImage} />
+          ) : (
+            <View style={styles.photoPlaceholder}>
+              <Text style={styles.photoPlaceholderIcon}>+</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        <View style={{ flex: 1, marginLeft: 10 }}>
+          <Text style={[styles.photoTitle, { color: theme.textPrimary }]}>
+            Profile photo (optional)
+          </Text>
+          <Text style={[styles.photoSubtitle, { color: theme.textSecondary }]}>
+            A clean, professional headshot works best. We only use this inside
+            your resume export.
+          </Text>
+
+          {photoUri && (
+            <TouchableOpacity onPress={handleRemovePhoto} style={styles.photoRemoveBtn} >
+              <Text style={styles.photoRemoveText}>Remove photo</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -1351,34 +1157,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 52,
+    paddingTop: 20,
     paddingBottom: 8,
-    
   },
   sectionSubtitle: {
     fontSize: 13,
     marginBottom: 16,
   },
-  backText: { fontSize: 14 },
-  headerTitle: { fontSize: 18, fontWeight: "600" },
-  contextCard: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
+  backText: { 
+    fontSize: 14
   },
-  contextTitle: { fontSize: 15, fontWeight: "600", marginBottom: 4 },
-  contextSubtitle: { fontSize: 12 },
-  chipRow: { flexDirection: "row", marginTop: 8 },
-  chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 1,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600"
   },
-  chipText: { fontSize: 11 },
-  scroll: { flex: 1, paddingHorizontal: 16, marginTop: 8 },
+  scroll: { 
+    flex: 1, 
+    paddingHorizontal: 16, 
+    marginTop: 8 
+  },
   fieldCard: {
     borderRadius: 16,
     borderWidth: 1,
@@ -1390,7 +1187,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  fieldLabel: { fontSize: 14, fontWeight: "600" },
+  fieldLabel: { 
+    fontSize: 14, 
+    fontWeight: "600" 
+  },
   fieldHeaderButtons: {
     flexDirection: "row",
     alignItems: "center",
@@ -1402,8 +1202,15 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
   },
-  aiButtonText: { fontSize: 11, fontWeight: "600" },
-  helperText: { fontSize: 11, marginTop: 4, marginBottom: 6 },
+  aiButtonText: { 
+    fontSize: 11, 
+    fontWeight: "600" 
+  },
+  helperText: { 
+    fontSize: 11, 
+    marginTop: 4, 
+    marginBottom: 6
+  },
   textInput: {
     borderWidth: 1,
     borderRadius: 10,
@@ -1412,7 +1219,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 6,
   },
-  savedHint: { fontSize: 11 },
+  savedHint: { 
+    fontSize: 11
+  },
   footer: {
     position: "absolute",
     left: 0,
@@ -1430,11 +1239,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  previewButton: { borderWidth: 1 },
+  previewButton: { 
+    borderWidth: 1
+  },
   saveButton: {},
-  previewText: { fontSize: 13, fontWeight: "500" },
-  saveText: { fontSize: 13, fontWeight: "600" },
-  previewContainer: { flex: 1 },
+  previewText: { 
+    fontSize: 13, 
+    fontWeight: "500" 
+  },
+  saveText: { 
+    fontSize: 13, 
+    fontWeight: "600" 
+  },
+  previewContainer: { 
+    flex: 1 
+  },
   previewHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -1443,9 +1262,14 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     justifyContent: "space-between",
   },
-  previewTitle: { fontSize: 18, fontWeight: "600" },
-  previewScroll: { paddingHorizontal: 16, paddingTop: 8 },
-  previewTextContent: { fontSize: 14, lineHeight: 20 },
+  previewTitle: { 
+    fontSize: 18, 
+    fontWeight: "600" 
+  },
+  previewScroll: { 
+    paddingHorizontal: 16, 
+    paddingTop: 8 
+  },
   subHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1453,136 +1277,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 8,
   },
-  // --- Preview base page ---
-  pvPage: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(148,163,184,0.5)",
-    padding: 14,
-    backgroundColor: "#020617",
-  },
-  pvPageCreative: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(148,163,184,0.5)",
-    flexDirection: "row",
-    overflow: "hidden",
-    backgroundColor: "#020617",
-  },
-  pvHeaderClassic: {
-    marginBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(148,163,184,0.4)",
-    paddingBottom: 6,
-  },
-  pvHeaderTraditional: {
-    marginBottom: 6,
-  },
-  pvHeaderBand: {
-    backgroundColor: "#0f172a",
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  pvHeaderClear: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  pvHeaderClearStripe: {
-    width: 6,
-    height: 40,
-    borderRadius: 999,
-    marginRight: 10,
-    backgroundColor: "#38bdf8",
-  },
-  pvHeaderCreative: {
-    marginBottom: 10,
-  },
-  pvName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#e5e7eb",
-  },
-  pvNameBand: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#e5e7eb",
-  },
-  pvHeadline: {
-    fontSize: 13,
-    color: "#9ca3af",
-  },
-  pvHeadlineBand: {
-    fontSize: 13,
-    color: "#cbd5f5",
-  },
-  pvHeadlineCreative: {
-    fontSize: 13,
-    color: "#fbbf24",
-  },
-
-  pvSeparator: {
-    height: 1,
-    backgroundColor: "rgba(148,163,184,0.6)",
-    marginVertical: 8,
-  },
-  pvSeparatorThin: {
-    height: 1,
-    backgroundColor: "rgba(51,65,85,0.8)",
-    marginVertical: 4,
-  },
-
-  // Sections
-  pvSection: {
-    marginTop: 8,
-  },
-  pvSectionCompact: {
-    marginTop: 6,
-  },
-  pvSectionTitle: {
-    fontSize: 11,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    color: "#9ca3af",
-    marginBottom: 4,
-  },
-  pvSectionBody: {
-    fontSize: 12,
-    color: "#e5e7eb",
-    lineHeight: 18,
-  },
-
-  // Two-column
-  pvTwoCol: {
-    flexDirection: "row",
-    marginTop: 4,
-  },
-  pvMainCol: {
-    flex: 1.4,
-    paddingRight: 8,
-  },
-  pvSideCol: {
-    flex: 0.9,
-    paddingLeft: 8,
-  },
-  pvSideColBoxed: {
-    flex: 0.9,
-    paddingLeft: 8,
-    borderLeftWidth: 1,
-    borderLeftColor: "rgba(51,65,85,0.8)",
-  },
-
-  // Creative layout
-  pvCreativeLeftBar: {
-    width: 10,
-    backgroundColor: "#f97316",
-  },
-  pvCreativeContent: {
-    flex: 1,
-    padding: 12,
-  },
-
   // Experience modal extras
   currentToggle: {
     flexDirection: "row",
@@ -1600,7 +1294,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginRight: 8,
   },
-
   // Language Toggle
   languageToggleWrapper: {
     flexDirection: "row",
@@ -1627,50 +1320,57 @@ const styles = StyleSheet.create({
   languageButtonTextActive: {
     color: "#e5e7eb",
   },
-
-  pvContactBlock: {
+  // --- Editor photo row ---
+  photoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
     marginTop: 4,
+    marginBottom: 8,
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1,
   },
-  pvContactText: {
+  photoImage: {
+    width: 72,
+    height: 90,
+    borderRadius: 8,
+    backgroundColor: "#e5e7eb",
+  },
+  photoPlaceholder: {
+    width: 72,
+    height: 90,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#4b5563",
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#020617",
+  },
+  photoPlaceholderIcon: {
+    fontSize: 28,
+    color: "#9ca3af",
+  },
+  photoTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  photoSubtitle: {
+    fontSize: 11,
+  },
+  photoRemoveBtn: {
+    marginTop: 6,
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#6b7280",
+  },
+  photoRemoveText: {
     fontSize: 11,
     color: "#9ca3af",
   },
-
-  // Skill chips
-  pvChipWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 4,
-  },
-  pvChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(148,163,184,0.7)",
-    marginRight: 6,
-    marginBottom: 6,
-  },
-  pvChipText: {
-    fontSize: 11,
-    color: "#e5e7eb",
-  },
-
-  // Sidebar cards
-  pvSideCard: {
-    padding: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(51,65,85,0.9)",
-    marginBottom: 8,
-  },
-  pvSideCardBoxed: {
-    padding: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(51,65,85,0.9)",
-    marginBottom: 8,
-    backgroundColor: "rgba(15,23,42,0.9)",
-  },
-
 });
