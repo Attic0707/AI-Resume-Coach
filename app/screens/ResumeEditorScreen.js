@@ -1404,6 +1404,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#12141c",
     borderRadius: 16,
     padding: 16,
+    height: SCREEN_HEIGHT * 0.55,
   },
   previewHeader: {
     flexDirection: "row",
