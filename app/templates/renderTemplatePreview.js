@@ -19,7 +19,7 @@ const styles = {
  * @param {object} params.data - normalized preview data
  * @param {string|null} params.photoUri - optional photo uri
  */
-export function renderTemplatePreview({ templateId, data, photoUri }) {
+export function renderTemplatePreview({ templateId, data, photoUri, paginate = false }) {
   const {
     name,
     headline,
@@ -109,8 +109,7 @@ export function renderTemplatePreview({ templateId, data, photoUri }) {
       const hasSkills = !!skills?.trim();
 
       return (
-        <View style={styles.mwPageOuter}>
-          <View style={styles.mwPageInner}>
+          <View style={[styles.mwPageInner, paginate && styles.mwPageInnerPaginate]}>
             {/* Header */}
             <View style={styles.mwHeader}>
               {/* PHOTO LEFT */}
@@ -143,7 +142,7 @@ export function renderTemplatePreview({ templateId, data, photoUri }) {
             <View style={styles.mwDivider} />
 
             {/* Body: two columns */}
-            <View style={styles.mwBodyRow}>
+            <View style={[styles.mwBodyRow, paginate && styles.mwBodyRowPaginate]}>
               {/* LEFT COLUMN */}
               <View style={styles.mwLeftCol}>
                 {/* Contact */}
@@ -260,7 +259,6 @@ export function renderTemplatePreview({ templateId, data, photoUri }) {
               </View>
             </View>
           </View>
-        </View>
       );
     }
 

@@ -11,6 +11,10 @@ import PopupModal from "../components/PopupModal";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
+const PAGE_WIDTH = Math.min(SCREEN_WIDTH - 32, 420); // looks nice on phones too
+const PAGE_HEIGHT = Math.round(PAGE_WIDTH * 1.414);
+const PAGE_PADDING = 18;
+
 const BASE_FIELDS = [
   {
     key: "name",
@@ -466,6 +470,91 @@ const AI_API_BY_FIELD = {
   experience_details: improveExperienceDetails,
   education_details: improveEducationDetails,
 };
+
+function PaginatedPreview({
+  renderContent,
+  contentKey, // <-- IMPORTANT: stable key to reset measurement when needed
+  pageWidth,
+  pageHeight,
+  padding,
+  paperStyle,
+}) {
+  const [contentHeight, setContentHeight] = useState(0);
+
+  const pageContentHeight = pageHeight - padding * 2;
+  const pageCount = Math.max(1, Math.ceil((contentHeight || 0) / pageContentHeight));
+
+  console.log("contentHeight:", contentHeight);
+  console.log("pageContentHeight:", pageContentHeight);
+  console.log("pageCount:", pageCount);
+
+  // Reset measurement only when contentKey changes (NOT when renderContent fn changes)
+  useEffect(() => {
+    setContentHeight(0);
+  }, [contentKey]);
+
+  return (
+    <View style={{ alignItems: "center" }}>
+      {/* Measuring pass (in-tree, invisible) */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          opacity: 0,
+          width: pageWidth,
+          left: 0,
+          top: 0,
+        }}
+      >
+        <View style={{ padding }}>
+          <View
+            onLayout={(e) => {
+              const h = e.nativeEvent.layout.height || 0;
+              console.log("MEASURE HEIGHT:", h);
+              if (h > 0 && h !== contentHeight) setContentHeight(h);
+            }}
+          >
+            {renderContent()}
+          </View>
+        </View>
+      </View>
+
+      {/* Visible pages */}
+      <View style={{ gap: 14 }}>
+        {Array.from({ length: pageCount }).map((_, i) => {
+          const offset = i * pageContentHeight;
+
+          return (
+            <View
+              key={`page-${i}`}
+              style={[
+                {
+                  width: pageWidth,
+                  height: pageHeight,
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  overflow: "hidden",
+                  padding,
+                },
+                paperStyle,
+              ]}
+            >
+              <View style={{ height: pageContentHeight, overflow: "hidden" }}>
+                <View style={{ transform: [{ translateY: -offset }] }}>
+                  {renderContent()}
+                </View>
+              </View>
+
+              <Text style={{ position: "absolute", right: 10, bottom: 8, fontSize: 11, opacity: 0.5, }} >
+                {i + 1} / {pageCount}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
 
 export default function TemplateEditorScreen({ route, navigation }) {
   const { theme, isPro, freeCreditsLeft, consumeCredit, language, setLanguage } = useContext(AppContext);
@@ -970,37 +1059,37 @@ export default function TemplateEditorScreen({ route, navigation }) {
         </View>
       </View>
 
-      {/* 🆕 Photo uploader row */}
-      <View style={[ styles.photoRow, { borderColor: theme.border, backgroundColor: theme.bgCard }, ]} >
-        <TouchableOpacity onPress={handlePickPhoto} activeOpacity={0.8}>
-          {photoUri ? (
-            <Image source={{ uri: photoUri }} style={styles.photoImage} />
-          ) : (
-            <View style={styles.photoPlaceholder}>
-              <Text style={styles.photoPlaceholderIcon}>+</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={[styles.photoTitle, { color: theme.textPrimary }]}>
-            Profile photo (optional)
-          </Text>
-          <Text style={[styles.photoSubtitle, { color: theme.textSecondary }]}>
-            A clean, professional headshot works best. We only use this inside
-            your resume export.
-          </Text>
-
-          {photoUri && (
-            <TouchableOpacity onPress={handleRemovePhoto} style={styles.photoRemoveBtn} >
-              <Text style={styles.photoRemoveText}>Remove photo</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
 
       {/* Fields */}
       <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled" >
+        {/* 🆕 Photo uploader row */}
+        <View style={[ styles.photoRow, { borderColor: theme.border, backgroundColor: theme.bgCard }, ]} >
+          <TouchableOpacity onPress={handlePickPhoto} activeOpacity={0.8}>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={styles.photoImage} />
+            ) : (
+              <View style={styles.photoPlaceholder}>
+                <Text style={styles.photoPlaceholderIcon}>+</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={[styles.photoTitle, { color: theme.textPrimary }]}>
+              Profile photo (optional)
+            </Text>
+            <Text style={[styles.photoSubtitle, { color: theme.textSecondary }]}>
+              A clean, professional headshot works best. We only use this inside
+              your resume export.
+            </Text>
+
+            {photoUri && (
+              <TouchableOpacity onPress={handleRemovePhoto} style={styles.photoRemoveBtn} >
+                <Text style={styles.photoRemoveText}>Remove photo</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
         {fields.map((field) => {
           const isValidForAI = field.isForAi;
           const isModalField = field.isModalField;
@@ -1097,9 +1186,20 @@ export default function TemplateEditorScreen({ route, navigation }) {
             </Text>
             <View style={{ width: 40 }} />
           </View>
-          <ScrollView style={styles.previewScroll} contentContainerStyle={{ padding: 16, paddingBottom: 32 }} >
-            {renderPreviewContent()}
-          </ScrollView>
+
+          {/* <ScrollView style={styles.previewScroll} contentContainerStyle={{ padding: 16, paddingBottom: 32 }} > </ScrollView> */}
+            <PaginatedPreview
+              contentKey={JSON.stringify({ templateId, photoUri, previewData })}
+              renderContent={() => renderTemplatePreview({ templateId, data: previewData, photoUri, paginate: true })}
+              pageWidth={PAGE_WIDTH}
+              pageHeight={PAGE_HEIGHT}
+              padding={PAGE_PADDING}
+              paperStyle={{
+                backgroundColor: theme.bgCard,
+                borderColor: theme.border,
+              }}
+            />
+          
         </View>
       </Modal>
 
@@ -1509,7 +1609,7 @@ const styles = StyleSheet.create({
   photoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 16,
+    // marginHorizontal: 16,
     marginTop: 4,
     marginBottom: 8,
     padding: 10,

@@ -194,6 +194,16 @@ export const minimalWhiteStyles = StyleSheet.create({
   mwBulletGroup: {
     marginTop: 2,
   },
+  mwPageInnerPaginate: {
+    aspectRatio: undefined,     // remove fixed page height
+    // height: undefined,        // (optional explicit)
+    alignSelf: "stretch",
+  },
+
+  mwBodyRowPaginate: {
+    flex: undefined,            // stop “fill the page” behavior
+    // You can keep flexDirection: "row" from base
+  },
 });
 
 /**
