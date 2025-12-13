@@ -138,9 +138,6 @@ export function renderTemplatePreview({ templateId, data, photoUri }) {
                   {mainHeadline || "Target Role / Headline"}
                 </Text>
               </View>
-              <View style={styles.mwHeaderRight}>
-                <Text style={styles.mwHeaderRightText}>RESUME</Text>
-              </View>
             </View>
 
             <View style={styles.mwDivider} />

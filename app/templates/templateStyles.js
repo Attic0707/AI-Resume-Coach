@@ -130,7 +130,7 @@ export const minimalWhiteStyles = StyleSheet.create({
     color: "#52525b",
   },
   mwName: {
-    fontSize: 20,
+    fontSize: 23,
     fontWeight: "700",
     color: "#111827",
   },
@@ -175,19 +175,19 @@ export const minimalWhiteStyles = StyleSheet.create({
     marginBottom: 10,
   },
   mwSectionTitle: {
-    fontSize: 11,
+    fontSize: 9,
     letterSpacing: 2,
     textTransform: "uppercase",
     color: "#6b7280",
     marginBottom: 4,
   },
   mwBodyText: {
-    fontSize: 11.5,
+    fontSize: 8,
     lineHeight: 17,
     color: "#111827",
   },
   mwSmallText: {
-    fontSize: 11,
+    fontSize: 8,
     lineHeight: 16,
     color: "#374151",
   },

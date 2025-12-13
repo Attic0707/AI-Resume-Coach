@@ -62,8 +62,6 @@ export const templateRegistry = [
     description: "Education-first layout with leadership emphasis and skills/interests.",
     previewData: SAMPLE_PREVIEW_DATA,
   },
-
-  // keep placeholders if you want them visible
   {
     id: TEMPLATE_IDS.classic,
     name: "Classic",
