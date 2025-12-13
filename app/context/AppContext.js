@@ -119,29 +119,35 @@ export function AppProvider({ children }) {
 export const DOCS_STORAGE_KEY = "@resumeiq_docs_v2";
 
 export function generateId() {
-  return (
-    Date.now().toString() +
-    "_" +
-    Math.random().toString(16).slice(2)
-  );
+  return Date.now().toString() + "_" + Math.random().toString(16).slice(2);
 }
 
-export async function saveDocument({ title, type, content }) {
+export async function saveDocument({ id, title, type, content, templateId, meta }) {
   try {
     const raw = await AsyncStorage.getItem(DOCS_STORAGE_KEY);
     const existing = raw ? JSON.parse(raw) : [];
     const docs = Array.isArray(existing) ? existing : [];
 
-    const newDoc = {
-      id: generateId(),
+    const nextDoc = {
+      id: id || generateId(),
       title: title || "Untitled",
-      type: type || "resume", // "resume" | "job-match" | "cover-letter" | "interview"
-      createdAt: Date.now(),
+      type: type || "resume",
+      createdAt: id
+        ? (docs.find((d) => d.id === id)?.createdAt || new Date().toISOString())
+        : new Date().toISOString(),
       content: content || "",
+      templateId: templateId || null,
+      meta: meta || null,
+      updatedAt: new Date().toISOString(),
     };
 
-    const next = [...docs, newDoc];
-    await AsyncStorage.setItem( DOCS_STORAGE_KEY, JSON.stringify(next) );
+    const idx = docs.findIndex((d) => d.id === nextDoc.id);
+    const next =
+      idx >= 0
+        ? docs.map((d) => (d.id === nextDoc.id ? nextDoc : d))
+        : [...docs, nextDoc];
+
+    await AsyncStorage.setItem(DOCS_STORAGE_KEY, JSON.stringify(next));
   } catch (e) {
     console.log("saveDocument error:", e);
   }

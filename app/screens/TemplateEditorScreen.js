@@ -1,5 +1,5 @@
 // app/screens/TemplateEditorScreen.js
-import React, { useContext, useMemo, useState, useRef } from "react";
+import React, { useContext, useMemo, useState, useRef, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Modal, Image } from "react-native";
 import { AppContext, saveDocument } from "../context/AppContext";
 import { improveAboutMe, improveSkillsSection, improveProjectsSection, improveExpertiseSection, improvePublishesSection, improveExperienceDetails, improveEducationDetails } from "../utils/api";
@@ -470,6 +470,22 @@ export default function TemplateEditorScreen({ route, navigation }) {
   const { theme, isPro, freeCreditsLeft, consumeCredit, language, setLanguage } = useContext(AppContext);
   const { templateId, templateName } = route.params || {};
 
+  const { initialDocId, initialTitle, initialMeta } = route.params || {};
+
+  // hydrate editor when coming from "Edit"
+  useEffect(() => {
+    if (!initialMeta?.fields || !Array.isArray(initialMeta.fields)) return;
+
+    setFields((prev) =>
+      prev.map((f) => {
+        const found = initialMeta.fields.find((x) => x.key === f.key);
+        return found ? { ...f, value: found.value ?? "" } : f;
+      })
+    );
+
+    if (initialMeta.photoUri) setPhotoUri(initialMeta.photoUri);
+  }, [initialMeta]);
+
   const [fields, setFields] = useState(
     BASE_FIELDS.map((f) => ({
       ...f,
@@ -635,21 +651,36 @@ export default function TemplateEditorScreen({ route, navigation }) {
   const handleSaveDocument = async () => {
     try {
       setSavingDoc(true);
-      const content = buildPreviewText();
+
+      const nameField = fields.find((f) => f.key === "name")?.value.trim();
+      const headlineField = fields.find((f) => f.key === "headline")?.value.trim();
+
+      const humanTitle =
+        nameField && headlineField
+          ? `${nameField} – ${headlineField}`
+          : nameField || `${templateName || "Resume"} – ${new Date().toLocaleDateString()}`;
 
       await saveDocument({
-        title: `${templateName || "Template"} Resume`,
+        id: initialDocId || null,
+        title: initialTitle || humanTitle,
         type: "resume",
-        content,
+        content: "",
+        templateId,
+        meta: {
+          templateId,
+          templateName,
+          previewData, 
+          fields: fields.map(({ key, value }) => ({ key, value })),
+          photoUri: photoUri || null,
+          savedAt: new Date().toISOString(),
+        },
       });
 
       Alert.alert("Saved", "Your resume has been saved to My Documents.");
+      navigation.navigate("MyDocuments"); // optional
     } catch (e) {
       console.log("saveDocument error", e);
-      Alert.alert(
-        "Error",
-        "Could not save this document. Please try again."
-      );
+      Alert.alert("Error", "Could not save this document. Please try again.");
     } finally {
       setSavingDoc(false);
     }
@@ -809,7 +840,7 @@ export default function TemplateEditorScreen({ route, navigation }) {
   };
 
   const renderPreviewContent = () => {
-    return renderTemplatePreview({ templateId, data: previewData, styles, photoUri });
+    return renderTemplatePreview({ templateId, data: previewData, photoUri });
   };
 
   return (
