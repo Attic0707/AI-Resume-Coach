@@ -169,7 +169,7 @@ export default function InterviewCoachScreen({ navigation }) {
               <TouchableOpacity key={item.key}
                 style={[ styles.coachChip, selected && styles.coachChipActive, { borderColor: selected ? theme.accent : theme.border, }, ]}
                 onPress={() => setLevel(item.key)}  >
-                <Text style={[ styles.coachChipText, { color: theme.textPrimary, fontWeight: selected ? "600" : "400", }, ]}  >
+                <Text style={[ styles.coachChipText, { color: selected ? theme.textTertiary : theme.textPrimary, fontWeight: selected ? "600" : "400", }, ]}  >
                   {isTurkish ? item.labelTr : item.labelEn}
                 </Text>
               </TouchableOpacity>
@@ -199,7 +199,7 @@ export default function InterviewCoachScreen({ navigation }) {
               <TouchableOpacity key={item.key} 
                 style={[ styles.coachChip, selected && styles.coachChipActive, { borderColor: selected ? theme.accent : theme.border, }, ]} 
                 onPress={() => setMode(item.key)} >
-                <Text style={[ styles.coachChipText, { color: theme.textPrimary, fontWeight: selected ? "600" : "400", }, ]} >
+                <Text style={[ styles.coachChipText, { color: selected ? theme.textTertiary : theme.textPrimary, fontWeight: selected ? "600" : "400", }, ]} >
                   {isTurkish ? item.labelTr : item.labelEn}
                 </Text>
               </TouchableOpacity>

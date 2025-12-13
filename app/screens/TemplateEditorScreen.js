@@ -1,11 +1,15 @@
 // app/screens/TemplateEditorScreen.js
 import React, { useContext, useMemo, useState, useRef, useEffect } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Modal, Image } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, Modal, Image, TouchableWithoutFeedback, Platform, Dimensions } from "react-native";
 import { AppContext, saveDocument } from "../context/AppContext";
 import { improveAboutMe, improveSkillsSection, improveProjectsSection, improveExpertiseSection, improvePublishesSection, improveExperienceDetails, improveEducationDetails } from "../utils/api";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 import { renderTemplatePreview } from "../templates/renderTemplatePreview";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import PopupModal from "../components/PopupModal";
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const BASE_FIELDS = [
   {
@@ -110,27 +114,37 @@ const BASE_FIELDS = [
 ];
 
 const DEFAULT_MODAL_DATA = {
+  // Experience
   company: "",
   title: "",
+
+  // Education
   institution: "",
   degree: "",
+
+  // Dates
   startDate: "",
   endDate: "",
+  isCurrent: false,
+
+  // Contact
   email: "",
   mobile: "",
   address: "",
   website: "",
   linkedin: "",
 
+  // Certificates
   certName: "",
   issuer: "",
   url: "",
 
+  // Referrals
   refName: "",
-  company: "",
+  refCompany: "",
   contact: "",
-  
-  isCurrent: false,
+
+  // Common free-text details
   details: "",
 };
 
@@ -394,7 +408,7 @@ const MODAL_CONFIGS = {
     primary1Key: "refName",
     primary1Placeholder: "",
     primary2Label: "Company",
-    primary2Key: "company",
+    primary2Key: "refCompany",
     primary2Placeholder: "",
     primary3Label: "Contact Info",
     primary3Key: "contact",
@@ -406,34 +420,21 @@ const MODAL_CONFIGS = {
     parse: (value) => {
       const data = { ...DEFAULT_MODAL_DATA };
       if (!value) return data;
-
-      const lines = value
-        .split("\n")
-        .map((l) => l.trim())
-        .filter(Boolean);
+      const lines = value.split("\n").map((l) => l.trim()).filter(Boolean);
       if (!lines.length) return data;
 
       const header = lines[0] || "";
-      const [first, second, third ] = header.split(",").map((s) => s.trim());
-      // naive mapping
+      const [first, second, third] = header.split(",").map((s) => s.trim());
       data.refName = first || "";
-      data.company = second || "";
+      data.refCompany = second || "";
       data.contact = third || "";
-
       return data;
     },
     format: (data, previousValue, mode) => {
-      const { refName, company, contact } = data;
-
-      const headerLine = [refName, company, contact].filter(Boolean).join(", ");
-      const lines = [];
-
-      if (headerLine) lines.push(headerLine);
-
-      const block = lines.join("\n");
-
+      const { refName, refCompany, contact } = data;
+      const headerLine = [refName, refCompany, contact].filter(Boolean).join(", ");
+      const block = headerLine ? headerLine : "";
       if (mode === "edit" || !previousValue?.trim()) return block;
-
       return `${previousValue.trim()}\n\n${block}`;
     },
   }
@@ -471,6 +472,96 @@ export default function TemplateEditorScreen({ route, navigation }) {
   const { templateId, templateName } = route.params || {};
 
   const { initialDocId, initialTitle, initialMeta } = route.params || {};
+
+  // 🔹 Date picker state
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [datePickerTarget, setDatePickerTarget] = useState(null); // "startDate" | "endDate"
+  const [datePickerValue, setDatePickerValue] = useState(new Date());
+
+  const formatDateLabel = (raw) => {
+    if (!raw) return "";
+    const d = new Date(raw);
+    if (!isNaN(d.getTime())) return d.toLocaleDateString();
+    return raw;
+  };
+
+  const openDatePicker = (targetKey) => {
+    setDatePickerTarget(targetKey);
+
+    const raw = modalData[targetKey];
+    let initial = new Date();
+    if (raw) {
+      const parsed = new Date(raw);
+      if (!isNaN(parsed.getTime())) initial = parsed;
+    }
+    setDatePickerValue(initial);
+    setDatePickerVisible(true);
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    if (selectedDate) setDatePickerValue(selectedDate);
+  };
+
+  const handleDateSave = () => {
+    if (!datePickerTarget) {
+      setDatePickerVisible(false);
+      return;
+    }
+    const iso = datePickerValue.toISOString().split("T")[0]; // YYYY-MM-DD
+    setModalData((prev) => ({ ...prev, [datePickerTarget]: iso }));
+    setDatePickerVisible(false);
+    setDatePickerTarget(null);
+  };
+
+  const handleDateCancel = () => {
+    setDatePickerVisible(false);
+    setDatePickerTarget(null);
+  };
+
+  const parseISODate = (str) => {
+    if (!str) return null;
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const compareDates = (a, b) => {
+    const da = parseISODate(a);
+    const db = parseISODate(b);
+    if (!da || !db) return 0;
+    return da.getTime() < db.getTime() ? -1 : da.getTime() > db.getTime() ? 1 : 0;
+  };
+
+  const validateModalDates = (config) => {
+    if (!config?.supportsDates) return { ok: true };
+
+    const { startDate, endDate, isCurrent } = modalData;
+
+    if (config.supportsCurrent && isCurrent) {
+      if (!startDate) {
+        return {
+          ok: false,
+          message: isTurkish
+            ? "Devam eden bir pozisyon için başlangıç tarihi zorunludur."
+            : "Start date is required for a current position.",
+        };
+      }
+      return { ok: true };
+    }
+
+    if (!startDate || !endDate) return { ok: true };
+
+    if (compareDates(startDate, endDate) === 1) {
+      return {
+        ok: false,
+        message: isTurkish
+          ? "Bitiş tarihi, başlangıç tarihinden önce olamaz."
+          : "End date cannot be earlier than start date.",
+      };
+    }
+
+    return { ok: true };
+  };
+
 
   // hydrate editor when coming from "Edit"
   useEffect(() => {
@@ -831,8 +922,13 @@ export default function TemplateEditorScreen({ route, navigation }) {
       return;
     }
 
-    const prevValue =
-      fields.find((f) => f.key === activeModalField)?.value || "";
+    const validation = validateModalDates(config);
+    if (!validation.ok) {
+      Alert.alert(isTurkish ? "Geçersiz tarih" : "Invalid date", validation.message);
+      return;
+    }
+
+    const prevValue = fields.find((f) => f.key === activeModalField)?.value || "";
     const formatted = config.format(modalData, prevValue, modalMode);
 
     updateFieldValue(activeModalField, formatted);
@@ -1008,8 +1104,27 @@ export default function TemplateEditorScreen({ route, navigation }) {
       </Modal>
 
       {/* Parametric modal (experience, education, etc.) */}
-      <Modal visible={!!activeModalField} animationType="slide" onRequestClose={closeModal}>
-        <View style={[ styles.previewContainer, { backgroundColor: theme.bg }, ]} >
+      {/* <Modal visible={!!activeModalField} animationType="slide" onRequestClose={closeModal}> */}
+        <PopupModal
+          visible={!!activeModalField}
+          onClose={closeModal}
+          title={
+            activeModalField
+              ? `${MODAL_CONFIGS[activeModalField]?.title || ""} ${
+                  modalMode === "edit"
+                    ? isTurkish ? "(Düzenle)" : "(Edit)"
+                    : isTurkish ? "(Ekle)" : "(Add)"
+                }`
+              : ""
+          }
+          leftText={isTurkish ? "İptal" : "Cancel"}
+          rightText={isTurkish ? "Kaydet" : "Save"}
+          onLeftPress={closeModal}
+          onRightPress={handleModalSave}
+          theme={theme}
+          maxHeight={0.9}
+        >
+        {/* <View style={[ styles.previewContainer, { backgroundColor: theme.bg }, ]} > */}
           {(() => {
             const config = activeModalField ? MODAL_CONFIGS[activeModalField] : null;
             if (!config) return null;
@@ -1019,31 +1134,8 @@ export default function TemplateEditorScreen({ route, navigation }) {
             const isContact = activeModalField === "contact";
 
             return (
-              <>
-                <View style={styles.previewHeader}>
-                  {/* Cancel */ }
-                  <TouchableOpacity onPress={closeModal}>
-                    <Text style={[ styles.backText, { color: theme.textSecondary }, ]} >
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
-
-                  {/* Title */ }
-                  <Text style={[ styles.previewTitle, { color: theme.textPrimary }, ]} >
-                    {config.title}{" "}
-                    {modalMode === "edit" ? "(Edit)" : "(Add)"}
-                  </Text>
-
-                  {/* Save */ }
-                  <TouchableOpacity onPress={handleModalSave}>
-                    <Text style={[ styles.backText, { color: theme.accent, fontWeight: "600" }, ]} >
-                      Save
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <ScrollView style={styles.previewScroll} contentContainerStyle={{ padding: 16, paddingBottom: 32, }} keyboardShouldPersistTaps="handled" >
-                  {/* Primary 1 */}
+              <ScrollView style={{ maxHeight: SCREEN_HEIGHT * 0.75 }} contentContainerStyle={{ paddingBottom: 10 }} keyboardShouldPersistTaps="handled" >
+                {/* Primary 1 */}
                   {config.primary1Key && (
                     <>
                     <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
@@ -1111,23 +1203,49 @@ export default function TemplateEditorScreen({ route, navigation }) {
                         <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
                           Start Date
                         </Text>
-                        <TextInput style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, ]} value={modalData.startDate}
-                          placeholder={config.primary2Placeholder} placeholderTextColor={theme.textSecondary}
-                          onChangeText={(t) => setModalData((prev) => ({ ...prev, startDate: t, })) } />
+                        <TouchableOpacity style={[ styles.textInput, { justifyContent: "center", borderColor: theme.border, backgroundColor: theme.bg }, ]}
+                          onPress={() => openDatePicker("startDate")}>
+                          <Text style={{ color: modalData.startDate ? theme.textPrimary : theme.textSecondary, fontSize: 13 }}>
+                            {modalData.startDate ? formatDateLabel(modalData.startDate) : isTurkish ? "Başlangıç tarihi seç" : "Select start date"}
+                          </Text>
+                        </TouchableOpacity>
                       </View>
 
                       <View style={{ flex: 1, marginLeft: 6 }}>
                         <Text style={[ styles.fieldLabel, { color: theme.textPrimary, marginBottom: 4, }, ]} >
                           End Date
                         </Text>
-                        <TextInput
-                          style={[ styles.textInput, { color: theme.textPrimary, borderColor: theme.border, }, config.supportsCurrent && modalData.isCurrent && { opacity: 0.4, }, ]}
-                          editable={ !config.supportsCurrent || !modalData.isCurrent }
-                          value={ config.supportsCurrent && modalData.isCurrent ? "Current" : modalData.endDate }
-                          onChangeText={(t) => setModalData((prev) => ({ ...prev, endDate: t, })) }
-                          placeholder="e.g., 11/2024"
-                          placeholderTextColor={theme.textSecondary}
-                        />
+                        <TouchableOpacity
+                          style={[
+                            styles.textInput,
+                            {
+                              justifyContent: "center",
+                              borderColor: theme.border,
+                              backgroundColor: theme.bg,
+                              ...(config.supportsCurrent && modalData.isCurrent && { opacity: 0.4 }),
+                            },
+                          ]}
+                          disabled={config.supportsCurrent && modalData.isCurrent}
+                          onPress={() => !(config.supportsCurrent && modalData.isCurrent) && openDatePicker("endDate")} >
+                          <Text
+                            style={{
+                              color:
+                                config.supportsCurrent && modalData.isCurrent
+                                  ? theme.textSecondary
+                                  : modalData.endDate
+                                  ? theme.textPrimary
+                                  : theme.textSecondary,
+                              fontSize: 13,
+                            }} >
+                            {config.supportsCurrent && modalData.isCurrent
+                              ? "Current"
+                              : modalData.endDate
+                              ? formatDateLabel(modalData.endDate)
+                              : isTurkish
+                              ? "Bitiş tarihi seç"
+                              : "Select end date"}
+                          </Text>
+                        </TouchableOpacity>
                       </View>
                     </View>
                     </>
@@ -1173,11 +1291,47 @@ export default function TemplateEditorScreen({ route, navigation }) {
                       </>
                   )}
                 </ScrollView>
-              </>
             );
           })()}
-        </View>
-      </Modal>
+
+        {datePickerVisible && (
+          <View style={styles.datePickerOverlay}>
+            <View style={[styles.datePickerCard, { backgroundColor: theme.bgCard }]}>
+              <View style={styles.datePickerHeader}>
+                <TouchableOpacity onPress={handleDateCancel}>
+                  <Text style={[styles.backText, { color: theme.textSecondary }]}>
+                    {isTurkish ? "İptal" : "Cancel"}
+                  </Text>
+                </TouchableOpacity>
+
+                <Text style={[styles.previewTitle, { color: theme.textPrimary, fontSize: 16 }]}>
+                  {datePickerTarget === "startDate"
+                    ? isTurkish
+                      ? "Başlangıç Tarihi"
+                      : "Start Date"
+                    : isTurkish
+                    ? "Bitiş Tarihi"
+                    : "End Date"}
+                </Text>
+
+                <TouchableOpacity onPress={handleDateSave}>
+                  <Text style={[styles.backText, { color: theme.accent, fontWeight: "600" }]}>
+                    {isTurkish ? "Kaydet" : "Save"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <DateTimePicker
+                value={datePickerValue}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "calendar"}
+                onChange={handleDateChange}
+              />
+            </View>
+          </View>
+        )}
+      {/* </Modal> */}
+      </PopupModal>
     </View>
   );
 }
@@ -1289,8 +1443,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: 52,
     paddingBottom: 8,
+    paddingTop: 52,
     justifyContent: "space-between",
   },
   previewTitle: { 
@@ -1403,5 +1557,27 @@ const styles = StyleSheet.create({
   photoRemoveText: {
     fontSize: 11,
     color: "#9ca3af",
+  },
+  datePickerOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: 0,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  datePickerCard: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: Platform.OS === "ios" ? 24 : 12,
+    paddingTop: 8,
+  },
+  datePickerHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginBottom: 4,
   },
 });

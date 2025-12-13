@@ -14,6 +14,7 @@ const lightTheme = {
   bgCard: "#ffffff",
   textPrimary: "#111827",
   textSecondary: "#6b7280",
+  textTertiary: "#ffffffff",
   border: "#e5e7eb",
   accent: "#2563eb",
   textOnAccent: "#ffffff",

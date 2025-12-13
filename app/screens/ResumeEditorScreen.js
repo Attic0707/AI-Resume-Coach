@@ -1075,7 +1075,7 @@ export default function ResumeEditorScreen({ route, navigation }) {
 
           return (
             <ScrollView
-              style={{ maxHeight: 620 }}
+              style={{ maxHeight: SCREEN_HEIGHT * 0.75 }}
               contentContainerStyle={{ paddingBottom: 10 }}
               keyboardShouldPersistTaps="handled"
             >
